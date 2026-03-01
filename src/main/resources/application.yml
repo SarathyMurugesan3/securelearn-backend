@@ -25,6 +25,14 @@ management:
       exposure:
         include: health,info
 
+  endpoint:
+    health:
+      show-details: always
+
+  health:
+    mongodb:
+      enabled: false   # Disable Mongo health check for Render
+
 securelearn:
   jwt:
     secret: ${JWT_SECRET}
