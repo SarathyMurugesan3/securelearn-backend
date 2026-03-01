@@ -1,0 +1,48 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: secure-edtech-backend
+
+  jackson:
+    default-property-inclusion: NON_NULL
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  data:
+    mongodb:
+      auto-index-creation: true
+  mongodb:
+    uri: ${MONGODB_URI}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+securelearn:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
+
+  registration:
+    public-enabled: true
+
+  risk:
+    screenshot-score: 10
+    device-limit: 3
+    block-threshold: 50
+
+  storage:
+    pdf-path: ./secure-storage/pdf
+    video-path: ./secure-storage/video
