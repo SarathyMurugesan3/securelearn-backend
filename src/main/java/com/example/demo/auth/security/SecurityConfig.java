@@ -39,22 +39,32 @@ public class SecurityConfig {
 	}
 	
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http,DaoAuthenticationProvider authenticationProvider) throws Exception{
-		http
-		.authenticationProvider(authenticationProvider)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.csrf(csrf -> csrf.disable())
-			.sessionManagement(session -> 
-					session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-			)
-			.authorizeHttpRequests(auth -> auth
-					.requestMatchers("/api/auth/**").permitAll()
-					.requestMatchers("/actuator/**").permitAll()
-					.requestMatchers("/api/admin/**").hasRole("ADMIN")
-					.requestMatchers("/api/student/**").hasRole("STUDENT")
-					.anyRequest().authenticated()
-			)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-		return http.build();
+	public SecurityFilterChain filterChain(
+	        HttpSecurity http,
+	        DaoAuthenticationProvider authenticationProvider) throws Exception {
+
+	    http
+	        .authenticationProvider(authenticationProvider)
+
+	        .cors(cors -> {})   // ✅ ENABLE CORS
+
+	        .csrf(csrf -> csrf.disable())
+
+	        .sessionManagement(session ->
+	                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+	        )
+
+	        .authorizeHttpRequests(auth -> auth
+	                .requestMatchers("/api/auth/**").permitAll()
+	                .requestMatchers("/actuator/**").permitAll()
+	                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+	                .requestMatchers("/api/student/**").hasRole("STUDENT")
+	                .anyRequest().authenticated()
+	        )
+
+	        .addFilterBefore(jwtAuthenticationFilter,
+	                UsernamePasswordAuthenticationFilter.class);
+
+	    return http.build();
 	}
 }
