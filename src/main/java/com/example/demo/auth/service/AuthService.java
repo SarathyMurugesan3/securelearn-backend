@@ -4,8 +4,8 @@ package com.example.demo.auth.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.auth.dto.LoginRequest;
@@ -25,12 +25,15 @@ public class AuthService {
 	private final JwtService jwtService;
 	private final UserRepository userRepository;
 	private final DeviceService deviceService;
+	private final PasswordEncoder passwordEncoder;
 	
-	public AuthService(AuthenticationManager authenticationManager,JwtService jwtService,UserRepository userRepository,DeviceService deviceService) {
+	public AuthService(AuthenticationManager authenticationManager,JwtService jwtService,UserRepository userRepository,DeviceService deviceService
+			,PasswordEncoder passwordEncoder) {
 		this.authenticationManager = authenticationManager;
 		this.jwtService = jwtService;
 		this.userRepository = userRepository;
 		this.deviceService = deviceService;
+		this.passwordEncoder = passwordEncoder;
 	}
 	
 	public LoginResponse login(LoginRequest request,HttpServletRequest httpRequest) {
@@ -47,6 +50,7 @@ public class AuthService {
 		deviceService.trackDevice(user, request.getFingerprint(), httpRequest);
 		String accessToken = jwtService.generateAccessToken(user.getEmail(), user.getRole());
 		String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+		System.out.println(passwordEncoder.matches("admin123", user.getPassword()));
 		return new LoginResponse(accessToken,refreshToken);
 	}
 	public LoginResponse refreshToken(String refreshToken) {
