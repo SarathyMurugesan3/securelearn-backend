@@ -44,22 +44,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
+        System.out.println("====== JWT DEBUG START ======");
+        System.out.println("AUTH HEADER: " + authHeader);
+
         String jwt = null;
         String email = null;
 
-        // 1️⃣ Check if header exists and starts with Bearer
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
-            email = jwtService.extractEmail(jwt);
+
+            try {
+                email = jwtService.extractEmail(jwt);
+                System.out.println("EXTRACTED EMAIL: " + email);
+            } catch (Exception e) {
+                System.out.println("EMAIL EXTRACTION FAILED: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Authorization header missing or malformed");
         }
 
-        // 2️⃣ If email found and user not already authenticated
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            // 3️⃣ Validate token
-            if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+            boolean isValid = jwtService.isTokenValid(jwt, userDetails.getUsername());
+            System.out.println("TOKEN VALID: " + isValid);
+            System.out.println("AUTHORITIES FROM DB: " + userDetails.getAuthorities());
+
+            if (isValid) {
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
@@ -72,12 +84,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                // 4️⃣ Set authentication in context
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                System.out.println("Authentication set in SecurityContext");
+            } else {
+                System.out.println("Token validation failed");
             }
         }
 
-        // Continue filter chain
+        System.out.println("====== JWT DEBUG END ======");
+
         filterChain.doFilter(request, response);
     }
 }
