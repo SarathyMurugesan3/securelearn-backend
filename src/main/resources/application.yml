@@ -1,5 +1,6 @@
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework   # Important for Render / proxy
 
 spring:
   application:
@@ -20,17 +21,32 @@ spring:
   mongodb:
     uri: ${MONGODB_URI}
 
+  main:
+    lazy-initialization: false   # Ensure everything loads before ready
+
 management:
+  endpoint:
+    health:
+      probes:
+        enabled: true      # Enables liveness & readiness endpoints
+
   endpoints:
     web:
       exposure:
         include: health,info
 
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
 securelearn:
   jwt:
+    # MUST be 32+ characters in production
     secret: ${JWT_SECRET:myLocalDevSecretKey123456789012345678901234567890}
-    access-token-expiration: 900000
-    refresh-token-expiration: 604800000
+    access-token-expiration: 900000        # 15 minutes
+    refresh-token-expiration: 604800000    # 7 days
 
   registration:
     public-enabled: true
