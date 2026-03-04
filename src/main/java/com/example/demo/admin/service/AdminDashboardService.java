@@ -20,12 +20,12 @@ public class AdminDashboardService {
 		this.activityLogRepository = activityLogRepository;
 	}
 	
-	public DashboardStatsResponse getStats() {
-		long totalUsers = userRepository.count();
-		long blockedUsers = userRepository.countByBlocked(true);
-		long highRiskUsers = userRepository.countByRiskScoreGreaterThan(30);
-		long totalContent = contentRepository.count();
-		long screenshotAttempts = activityLogRepository.countByAction("SCREENSHOT_ATTEMPT");
+	public DashboardStatsResponse getStats(String adminEmail, String adminId) {
+		long totalUsers = userRepository.countByAdminId(adminId);
+		long blockedUsers = userRepository.countByBlockedAndAdminId(true, adminId);
+		long highRiskUsers = userRepository.countByRiskScoreGreaterThanAndAdminId(30, adminId);
+		long totalContent = contentRepository.countByUploadedBy(adminEmail);
+		long screenshotAttempts = activityLogRepository.countByActionAndAdminId("SCREENSHOT_ATTEMPT", adminId);
 		return new DashboardStatsResponse(totalUsers,blockedUsers,totalContent,screenshotAttempts,highRiskUsers);
 	}
 	

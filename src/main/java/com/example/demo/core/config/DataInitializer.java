@@ -22,7 +22,7 @@ public class DataInitializer implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
 		if(userRepository.findByEmail("admin@securelearn.com").isEmpty()) {
-			User admin = new User("Super Admin","admin@securelearn.com",passwordEncoder.encode("admin123"),"ADMIN");
+			User admin = new User("Super Admin","admin@securelearn.com",passwordEncoder.encode("admin123"),"ADMIN", null);
 			userRepository.save(admin);
             System.out.println("✅ Default Admin Created");
 		}

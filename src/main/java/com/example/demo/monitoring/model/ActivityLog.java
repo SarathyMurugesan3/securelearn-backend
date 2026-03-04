@@ -20,14 +20,17 @@ public class ActivityLog {
 	private String fingerprint;
 	@Indexed
 	private LocalDateTime timestamp;
-	
+	@Indexed
+	private String adminId;
+
 	public ActivityLog() {}
 	
-	public ActivityLog(String userId,String action,String ipAddress,String fingerprint) {
+	public ActivityLog(String userId,String action,String ipAddress,String fingerprint, String adminId) {
 		this.userId = userId;
 		this.action = action;
 		this.ipAddress = ipAddress;
 		this.fingerprint = fingerprint;
+		this.adminId = adminId;
 		this.timestamp = LocalDateTime.now();
 	}
 	
@@ -46,7 +49,10 @@ public class ActivityLog {
 	public LocalDateTime getTimestamp() {
 		return timestamp;
 	}
-	
-	
-	
+	public String getAdminId() {
+		return adminId;
+	}
+	public void setAdminId(String adminId) {
+		this.adminId = adminId;
+	}
 }

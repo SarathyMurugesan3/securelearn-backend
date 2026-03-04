@@ -15,4 +15,12 @@ public interface UserRepository extends MongoRepository<User,String> {
 	Page<User> findByRiskScoreGreaterThan(int riskScore,Pageable pageable);
 	long countByBlocked(boolean blocked);
 	long countByRiskScoreGreaterThan(int riskScore);
+
+	// Multi-Admin Scoped Methods
+	Page<User> findByAdminId(String adminId, Pageable pageable);
+	Page<User> findByBlockedAndAdminId(boolean blocked, String adminId, Pageable pageable);
+	Page<User> findByRiskScoreGreaterThanAndAdminId(int riskScore, String adminId, Pageable pageable);
+	long countByAdminId(String adminId);
+	long countByBlockedAndAdminId(boolean blocked, String adminId);
+	long countByRiskScoreGreaterThanAndAdminId(int riskScore, String adminId);
 }

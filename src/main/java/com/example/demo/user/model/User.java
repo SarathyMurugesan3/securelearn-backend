@@ -24,16 +24,20 @@ public class User {
 	
 	private List<DeviceInfo> devices = new ArrayList<>();
 	
+	@Indexed
+	private String adminId;
+	
 	public User() {}
-	public User( String name, String email, String password, String role) {
+	public User( String name, String email, String password, String role, String adminId) {
 		super();
 		this.name = name;
 		this.email = email;
 		this.password = password;
 		this.role = role;
+		this.adminId = adminId;
 	}
 	public User(String id, String name, String email, String password, String role, int riskScore, boolean blocked,
-			List<String> deviceFingerprints) {
+			List<String> deviceFingerprints, String adminId) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -43,6 +47,7 @@ public class User {
 		this.riskScore = riskScore;
 		this.blocked = blocked;
 		this.deviceFingerprints = deviceFingerprints;
+		this.adminId = adminId;
 	}
 	public String getId() {
 		return id;
@@ -98,8 +103,10 @@ public class User {
 	public void setDevices(List<DeviceInfo> devices) {
 		this.devices = devices;
 	}
-	
-	
-	
-	
+	public String getAdminId() {
+		return adminId;
+	}
+	public void setAdminId(String adminId) {
+		this.adminId = adminId;
+	}
 }

@@ -29,7 +29,7 @@ public class MonitoringService {
 	}
 	public void logScreenshotAttempt(User user,String fingerprint,HttpServletRequest request) {
 		String ip = request.getHeader("X-Forwarded-For");
-		ActivityLog log = new ActivityLog(user.getId(),"SCREENSHOT_ATTEMPT",ip,fingerprint);
+		ActivityLog log = new ActivityLog(user.getId(),"SCREENSHOT_ATTEMPT",ip,fingerprint, user.getAdminId());
 		activityLogRepository.save(log);
 		int newRisk = user.getRiskScore()+riskProperties.getScreenshotScore();
 		user.setRiskScore(newRisk);

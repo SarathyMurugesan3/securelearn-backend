@@ -28,7 +28,7 @@ public class UserService {
 			throw new RuntimeException("Invalid role");
 		}
 		String encodedPassword = passwordEncoder.encode(request.getPassword());
-		User user = new User(request.getName(),request.getEmail(),encodedPassword,request.getRole());
+		User user = new User(request.getName(),request.getEmail(),encodedPassword,request.getRole(), request.getAdminId());
 		return userRepository.save(user);
 	}
 }

@@ -18,19 +18,19 @@ public class ContentService {
         this.contentRepository = contentRepository;
     }
 
-    public List<ContentResponse> listAllContent() {
-
-        List<Content> contents = contentRepository.findAll();
+    public List<ContentResponse> listAllContent(String adminEmail) {
+        List<Content> contents = contentRepository.findAllByUploadedBy(adminEmail);
 
         return contents.stream()
-                .map(content ->
-                        new ContentResponse(
-                                content.getId(),
-                                content.getTitle(),
-                                content.getType(),
-                                content.getUploadedAt()
-                        )
-                )
+                .map(content -> new ContentResponse(
+                        content.getId(),
+                        content.getTitle(),
+                        content.getDescription(),
+                        content.getType(),
+                        content.getFileName(),
+                        content.getVideoUrl(),
+                        content.getUploadedAt()
+                ))
                 .collect(Collectors.toList());
     }
 }

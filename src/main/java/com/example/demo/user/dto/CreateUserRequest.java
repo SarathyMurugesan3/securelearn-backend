@@ -18,6 +18,8 @@ public class CreateUserRequest {
 	@NotBlank
 	private String role;
 	
+	private String adminId;
+	
 	public CreateUserRequest() {}
 
 	public String getName() {
@@ -51,8 +53,12 @@ public class CreateUserRequest {
 	public void setRole(String role) {
 		this.role = role;
 	}
-	
-	
-	
-	
+
+	public String getAdminId() {
+		return adminId;
+	}
+
+	public void setAdminId(String adminId) {
+		this.adminId = adminId;
+	}
 }
