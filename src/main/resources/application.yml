@@ -49,5 +49,5 @@ securelearn:
     block-threshold: 50
 
   storage:
-    pdf-path: ./secure-storage/pdf
-    video-path: ./secure-storage/video
+    pdf-path: ./tmp/pdf
+    video-path: ./tmp/video
