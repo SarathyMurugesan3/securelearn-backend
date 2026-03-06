@@ -51,3 +51,7 @@ securelearn:
   storage:
     pdf-path: /tmp/pdf/
     video-path: /tmp/video/
+logging:
+  level:
+    root: INFO
+    org.springframework: DEBUG
