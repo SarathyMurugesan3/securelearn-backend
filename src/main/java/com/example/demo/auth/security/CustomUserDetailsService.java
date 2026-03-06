@@ -32,7 +32,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 		}
 		List<GrantedAuthority> authorities = new ArrayList<>();
 		authorities.add(
-				new SimpleGrantedAuthority("ROLE_"+user.getRole())
+				new SimpleGrantedAuthority("ROLE_"+user.getRole().toUpperCase())
 		);
 		return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
 		

@@ -27,6 +27,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/student/video")
+@CrossOrigin(origins = "*")
 public class VideoStreamingController {
 
     private final ContentRepository contentRepository;
