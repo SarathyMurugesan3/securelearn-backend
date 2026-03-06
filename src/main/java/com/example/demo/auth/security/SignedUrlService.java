@@ -34,8 +34,7 @@ public class SignedUrlService {
 
         long now = System.currentTimeMillis() / 1000;
 
-        // token expires in 60 seconds
-        if (Math.abs(now - ts) > 300) {
+        if (Math.abs(now - ts) > 600) {
             return false;
         }
 
