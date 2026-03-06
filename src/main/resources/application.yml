@@ -17,10 +17,8 @@ spring:
 
   data:
     mongodb:
+      uri: ${MONGODB_URI}
       auto-index-creation: false
-
-  mongodb:
-    uri: ${MONGODB_URI}
 
   main:
     lazy-initialization: false
