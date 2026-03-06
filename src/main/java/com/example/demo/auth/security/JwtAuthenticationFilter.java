@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/auth/");
+        return path.startsWith("/api/auth/") || path.startsWith("/actuator/");
     }
 
     
@@ -44,9 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        System.out.println("====== JWT DEBUG START ======");
-        System.out.println("AUTH HEADER: " + authHeader);
-
         String jwt = null;
         String email = null;
 
@@ -55,9 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             try {
                 email = jwtService.extractEmail(jwt);
-                System.out.println("EXTRACTED EMAIL: " + email);
             } catch (Exception e) {
-                System.out.println("EMAIL EXTRACTION FAILED: " + e.getMessage());
+                System.out.println("Invalid JWT: " + e.getMessage());
+                SecurityContextHolder.clearContext();
             }
         } else {
             System.out.println("Authorization header missing or malformed");
@@ -67,11 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            boolean isValid = jwtService.isTokenValid(jwt, userDetails.getUsername());
-            System.out.println("TOKEN VALID: " + isValid);
-            System.out.println("AUTHORITIES FROM DB: " + userDetails.getAuthorities());
-
-            if (isValid) {
+            if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
@@ -87,12 +80,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
                 System.out.println("Authentication set in SecurityContext");
+
             } else {
                 System.out.println("Token validation failed");
+                SecurityContextHolder.clearContext();
             }
         }
 
-        System.out.println("====== JWT DEBUG END ======");
 
         filterChain.doFilter(request, response);
     }
