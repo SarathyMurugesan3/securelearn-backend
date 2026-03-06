@@ -53,8 +53,13 @@ public class SecurityConfig {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOriginPatterns(List.of("*"));  // Allow all origins (localhost:5173, Vercel, Netlify, etc.)
-		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+		config.setAllowedOriginPatterns(List.of(
+			    "http://localhost:5173",
+			    "https://securelearn-frontend.vercel.app",
+			    "*"
+			));
+		config.setAllowCredentials(true); // Allow all origins (localhost:5173, Vercel, Netlify, etc.)
+		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH","OPTIONS"));
 		config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Device-Fingerprint", "Accept"));
 		config.setExposedHeaders(List.of("Authorization"));
 		config.setAllowCredentials(true);

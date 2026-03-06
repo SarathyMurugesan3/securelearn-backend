@@ -1,5 +1,7 @@
 package com.example.demo.auth.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,7 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.auth.dto.LoginRequest;
@@ -89,8 +90,8 @@ public class AuthController {
 	}
 	
 	@PostMapping("/refresh")
-	public LoginResponse refresh(@RequestParam String refreshToken) {
-		return authService.refreshToken(refreshToken);
+	public LoginResponse refresh(@RequestBody Map<String,String> body) {
+	    return authService.refreshToken(body.get("refreshToken"));
 	}
 	
 	@PostMapping("/logout")
