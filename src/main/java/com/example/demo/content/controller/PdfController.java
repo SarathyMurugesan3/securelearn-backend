@@ -41,15 +41,22 @@ public class PdfController {
             throws Exception {
 
         String email = authentication.getName();
+        User student = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow();
 
         Content content = contentRepository.findById(id)
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+        if(student.getAdminId() == null) {
+        	return ResponseEntity.status(403).build();
+        }
+        User admin = userRepository.findById(student.getAdminId()).orElseThrow(() -> new RuntimeException("Admin not found"));
+        
+        if(!content.getUploadedBy().equals(admin.getEmail())) {
+        	return ResponseEntity.status(403).build();
+        }
 
         String watermarkText =
-                user.getEmail() + " | IP Tracked | SecureLearn";
+                student.getEmail() + " | IP Tracked | SecureLearn";
 
         byte[] watermarkedPdf =
                 watermarkService.addWatermark(
