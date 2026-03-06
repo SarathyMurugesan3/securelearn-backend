@@ -1,6 +1,8 @@
 package com.example.demo.streaming.service;
 
 import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.SecretKey;
 
@@ -16,6 +18,8 @@ public class VideoTokenService {
 	
 	private final SecretKey secretKey;
 	
+	private final ConcurrentHashMap<String,Boolean> usedNonces = new ConcurrentHashMap<>();
+	
 	public VideoTokenService(@Value("${securelearn.jwt.secret}") String secret) {
 		this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
 	}
@@ -23,11 +27,13 @@ public class VideoTokenService {
 	public String generateVideoToken(String contentId,String userEmail,String fingerprint,String ip) {
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + 60_000);
+		String nonce = UUID.randomUUID().toString();
 		return Jwts.builder()
 				.setSubject(userEmail)
 				.claim("contentId", contentId)
 				.claim("fingerprint", fingerprint)
 				.claim("ip", ip)
+				.claim("nonce",nonce)
 				.setIssuedAt(now)
 				.setExpiration(expiry)
 				.signWith(secretKey,SignatureAlgorithm.HS256)
@@ -43,8 +49,18 @@ public class VideoTokenService {
 					.getBody();
 			String extractedContent = claims.get("contentId",String.class);
 			String extractedFingerprint = claims.get("fingerprint",String.class);
+			String extractedIp = claims.get("ip",String.class);
+			String nonce = claims.get("nonce",String.class);
 			Date expiry = claims.getExpiration();
-			return extractedContent.equals(contentId) && extractedFingerprint.equals(fingerprint)&& claims.get("ip",String.class).equals(ip) && expiry.after(new Date());
+			if(usedNonces.containsKey(nonce)) {
+				return false;
+			}
+			boolean valid = extractedContent.equals(contentId) && extractedFingerprint.equals(fingerprint) 
+							&& extractedIp.equals(ip) && expiry.after(new Date());
+			if(valid) {
+				usedNonces.put(nonce, true);
+			}
+			return valid;
 		}catch(Exception e) {
 			return false;
 		}
