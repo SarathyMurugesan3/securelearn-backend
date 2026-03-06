@@ -90,7 +90,7 @@ public class SecurityConfig {
 	                .requestMatchers("/actuator/**").permitAll()
 	                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 	                .requestMatchers("/api/student/video/**").permitAll()
-	                .requestMatchers("/api/student/**").hasRole("STUDENT")
+	                .requestMatchers("/api/student/**").hasAnyRole("STUDENT","ADMIN")
 	                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 	                .requestMatchers("/api/monitor/**").authenticated()
 	                .anyRequest().authenticated()
