@@ -17,11 +17,12 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGODB_URI}
       auto-index-creation: false
 
   main:
     lazy-initialization: false
+  mongodb:
+    uri: ${MONGODB_URI}
 
 management:
   endpoints:
