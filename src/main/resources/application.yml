@@ -1,5 +1,6 @@
 server:
   port: ${PORT:8080}
+  address: 0.0.0.0
   forward-headers-strategy: framework
 
 spring:
@@ -16,7 +17,7 @@ spring:
 
   data:
     mongodb:
-      auto-index-creation: false   # 🔥 important: speeds startup
+      auto-index-creation: false
 
   mongodb:
     uri: ${MONGODB_URI}
@@ -32,7 +33,7 @@ management:
 
   endpoint:
     health:
-      show-details: never   # keep simple
+      show-details: never
 
 securelearn:
   jwt:
@@ -49,5 +50,5 @@ securelearn:
     block-threshold: 50
 
   storage:
-    pdf-path: ./tmp/pdf
-    video-path: ./tmp/video
+    pdf-path: /tmp/pdf/
+    video-path: /tmp/video/
