@@ -51,7 +51,8 @@ public class PdfController {
 
         String token = signedUrlService.generateToken(id, email, ts);
 
-        String url = "/api/student/pdf/" + id + "?token=" + token + "&ts=" + ts;
+        String url = "https://securelearn-backend.onrender.com/api/student/pdf/"
+                + id + "?token=" + token + "&ts=" + ts;
 
         return ResponseEntity.ok(url);
     }
