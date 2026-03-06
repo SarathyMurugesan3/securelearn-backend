@@ -39,6 +39,23 @@ public class PdfController {
         this.userRepository = userRepository;
         this.signedUrlService = signedUrlService;
     }
+    
+    @GetMapping("/url/{id}")
+    public ResponseEntity<String> getSignedPdfUrl(
+            @PathVariable String id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        long ts = System.currentTimeMillis() / 1000;
+
+        String token = signedUrlService.generateToken(id, email, ts);
+
+        String url = "/api/student/pdf/" + id + "?token=" + token + "&ts=" + ts;
+
+        return ResponseEntity.ok(url);
+    }
+    
 
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String id,@RequestParam String token,
