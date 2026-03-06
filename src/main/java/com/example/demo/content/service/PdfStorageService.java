@@ -14,7 +14,7 @@ import jakarta.annotation.PostConstruct;
 public class PdfStorageService {
 
 	
-	@Value("${securelearn.storage.pdf-path}")
+	@Value("${securelearn.storage.pdf-path:/tmp/pdf/}")
 	private String storagePath;
 	
 	@PostConstruct
