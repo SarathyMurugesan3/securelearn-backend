@@ -27,14 +27,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
-		if(user.isBlocked()) {
-			throw new UsernameNotFoundException("User is blocked");
-		}
-		List<GrantedAuthority> authorities = new ArrayList<>();
-		authorities.add(
-				new SimpleGrantedAuthority("ROLE_"+user.getRole().toUpperCase())
-		);
-		return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
-		
+		String roleName = user.getRole().toUpperCase().trim();
+	    
+	    return org.springframework.security.core.userdetails.User.builder()
+	            .username(user.getEmail())
+	            .password(user.getPassword())
+	            .authorities(roleName) // This sets the authority to "STUDENT"
+	            .disabled(user.isBlocked())
+	            .build();
 	}
 }

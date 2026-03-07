@@ -82,6 +82,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 System.out.println("Authentication set in SecurityContext");
 
             } else {
+            	if (!request.getMethod().equals("OPTIONS")) {
+                    System.out.println("No Bearer token found for: " + request.getServletPath());
+                }
                 System.out.println("Token validation failed");
                 SecurityContextHolder.clearContext();
             }
