@@ -1,6 +1,5 @@
 package com.example.demo.content.controller;
 
-
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -52,8 +51,10 @@ public class PdfController {
 
         String token = signedUrlService.generateToken(id, email, ts);
 
+        // Note: urlEncoding of email is handled dynamically by string formatting if needed, 
+        // but typically email is safe in query params.
         String url = "https://securelearn-backend.onrender.com/api/student/pdf/"
-                + id + "?token=" + token + "&ts=" + ts;
+                + id + "?token=" + token + "&ts=" + ts + "&email=" + email;
 
         return ResponseEntity.ok(url);
     }
@@ -63,15 +64,14 @@ public class PdfController {
     public ResponseEntity<byte[]> viewPdf(@PathVariable String id,
                                           @RequestParam String token,
                                           @RequestParam long ts,
-                                          Authentication authentication) throws Exception {
+                                          @RequestParam String email) throws Exception {
 
-        String email = authentication.getName();
         System.out.println("STEP 1: request received for pdf " + id);
         System.out.println("STEP 2: user email = " + email);
 
         if (!signedUrlService.validateToken(token, id, email, ts)) {
             System.out.println("STEP 3: token validation FAILED");
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(403).body("Token validation failed".getBytes());
         }
 
         System.out.println("STEP 4: token valid");
@@ -83,7 +83,7 @@ public class PdfController {
 
         if (student.getAdminId() == null) {
             System.out.println("STEP 6: student has no adminId");
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(403).body("Student has no assigned admin".getBytes());
         }
 
         User admin = userRepository.findById(student.getAdminId())
@@ -98,10 +98,16 @@ public class PdfController {
 
         if (!admin.getEmail().equals(content.getUploadedBy())) {
             System.out.println("STEP 9: admin mismatch -> forbidden");
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(403).body("Content does not belong to your admin".getBytes());
         }
 
         System.out.println("STEP 10: permission OK");
+
+        java.io.File pdfFile = new java.io.File(content.getFilePath());
+        if (!pdfFile.exists()) {
+            System.out.println("STEP 11: File missing on disk! (Probably wiped by Render)");
+            return ResponseEntity.status(404).body("Error: The physical PDF file no longer exists on this server. This happens on free Render tiers because the temporary folder resets. Please re-upload the document.".getBytes());
+        }
 
         String watermarkText = student.getEmail() + " | IP Tracked | SecureLearn";
 

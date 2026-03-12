@@ -7,7 +7,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 
 import com.example.demo.user.dto.CreateUserRequest;
 import com.example.demo.user.model.User;
@@ -35,7 +38,7 @@ public class AdminUserController {
 
 	@PostMapping
 	public ResponseEntity<?> createUser(
-			@RequestBody CreateUserRequest request,
+			@Valid @RequestBody CreateUserRequest request,
 			Authentication authentication) {
 
 		// Always resolve adminId from the authenticated admin's JWT — never trust client input

@@ -9,6 +9,8 @@ spring:
 
   jackson:
     default-property-inclusion: NON_NULL
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
 
   servlet:
     multipart:
@@ -18,11 +20,8 @@ spring:
   data:
     mongodb:
       auto-index-creation: false
-
-  main:
-    lazy-initialization: false
-  mongodb:
-    uri: ${MONGODB_URI}
+      database: securelearn
+      uri: ${MONGODB_URI}
 
 management:
   endpoints:
@@ -32,7 +31,9 @@ management:
 
   endpoint:
     health:
-      show-details: never
+      show-details: always
+      probes:
+        enabled: true
 
 securelearn:
   jwt:
