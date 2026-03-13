@@ -41,7 +41,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/register")
-	public ResponseEntity<?> register(@Valid @RequestBody CreateUserRequest request){
+	public ResponseEntity<?> register(@RequestBody CreateUserRequest request){
 		if(!registrationProperties.isPublicEnabled()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body("Public registration disabled");
@@ -72,7 +72,7 @@ public class AuthController {
 	 * The adminId is automatically resolved from the JWT token — no manual input needed.
 	 */
 	@PostMapping("/admin/create-user")
-	public ResponseEntity<?> adminCreateUser(@Valid @RequestBody CreateUserRequest request, Authentication authentication) {
+	public ResponseEntity<?> adminCreateUser(@RequestBody CreateUserRequest request, Authentication authentication) {
 		String adminEmail = authentication.getName();
 		User admin = userRepository.findByEmail(adminEmail).orElseThrow(() -> new RuntimeException("Admin not found"));
 		
@@ -89,14 +89,9 @@ public class AuthController {
 		return authService.login(request, httpRequest);
 	}
 	
-	@RequestMapping(value = "/refresh", method = {org.springframework.web.bind.annotation.RequestMethod.POST, org.springframework.web.bind.annotation.RequestMethod.GET})
-	public LoginResponse refresh(@RequestBody(required = false) Map<String,String> body, 
-	                             @org.springframework.web.bind.annotation.RequestParam(required = false) String refreshToken) {
-	    String token = (body != null && body.containsKey("refreshToken")) ? body.get("refreshToken") : refreshToken;
-	    if (token == null || token.isBlank()) {
-	        throw new RuntimeException("Refresh token is missing");
-	    }
-	    return authService.refreshToken(token);
+	@PostMapping("/refresh")
+	public LoginResponse refresh(@RequestBody Map<String,String> body) {
+	    return authService.refreshToken(body.get("refreshToken"));
 	}
 	
 	@PostMapping("/logout")

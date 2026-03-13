@@ -20,8 +20,11 @@ spring:
   data:
     mongodb:
       auto-index-creation: false
-      database: securelearn
-      uri: ${MONGODB_URI}
+
+  main:
+    lazy-initialization: false
+  mongodb:
+    uri: ${MONGODB_URI}
 
 management:
   endpoints:

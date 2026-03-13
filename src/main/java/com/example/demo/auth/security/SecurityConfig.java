@@ -16,8 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -51,37 +51,43 @@ public class SecurityConfig {
 	 * OPTIONS request fails silently and Axios reports "Request aborted".
 	 */
 	@Bean
-	public CorsFilter corsFilter() {
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
+		config.setAllowedOriginPatterns(List.of(
+			    "http://localhost:5173",
+			    "https://securelearn-frontend.vercel.app",
+			    "*"
+			));
+		config.setAllowCredentials(true); // Allow all origins (localhost:5173, Vercel, Netlify, etc.)
+		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH","OPTIONS"));
+		config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Device-Fingerprint", "Accept"));
+		config.setExposedHeaders(List.of("Authorization"));
 		config.setAllowCredentials(true);
-		config.setAllowedOriginPatterns(List.of("*"));
-		config.setAllowedHeaders(List.of("*"));
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-		config.setExposedHeaders(List.of("Authorization", "Content-Disposition"));
-		config.setMaxAge(3600L);
+		config.setMaxAge(3600L); // Cache preflight for 1 hour
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", config);
-		return new CorsFilter(source);
+		return source;
 	}
 	
 	@Bean
 	public SecurityFilterChain filterChain(
 	        HttpSecurity http,
-	        DaoAuthenticationProvider authenticationProvider) throws Exception {
+	        DaoAuthenticationProvider authenticationProvider,
+	        CorsConfigurationSource corsConfigurationSource) throws Exception {
 
 	    http
 	        .authenticationProvider(authenticationProvider)
-	        .cors(cors -> cors.disable()) // We use the CorsFilter bean instead
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource))
 	        .csrf(csrf -> csrf.disable())
 	        .sessionManagement(session ->
 	                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 	        )
 	        .authorizeHttpRequests(auth -> auth
 	        		.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-	                .requestMatchers("/", "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
+	                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
 	                .requestMatchers("/api/auth/admin/**").hasAuthority("ADMIN")
 	                .requestMatchers("/actuator/**").permitAll()
-	                .requestMatchers("/api/ping").permitAll() // Custom endpoint for UptimeRobot
 	                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 	                .requestMatchers("/api/student/video/**").permitAll()
 	                .requestMatchers("/api/student/pdf/{id}").permitAll() 
