@@ -89,7 +89,7 @@ public class SecurityConfig {
 	                .requestMatchers("/api/auth/admin/**").hasAuthority("ADMIN")
 	                .requestMatchers("/actuator/**").permitAll()
 	                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-	                .requestMatchers("/api/student/video/**").permitAll()
+	                .requestMatchers("/api/student/video/{id}").permitAll()
 	                .requestMatchers("/api/student/pdf/{id}").permitAll() 
 	                .requestMatchers("/error").permitAll() // Allows Spring Boot to return actual 500 errors instead of masking them as 403
 	                .requestMatchers("/api/student/**").hasAnyAuthority("STUDENT","ADMIN")
