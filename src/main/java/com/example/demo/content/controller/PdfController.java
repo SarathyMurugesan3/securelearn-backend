@@ -41,22 +41,20 @@ public class PdfController {
     }
     
     @GetMapping("/url/{id}")
-    public ResponseEntity<String> getSignedPdfUrl(
+    public ResponseEntity<java.util.Map<String, String>> getSignedPdfUrl(
             @PathVariable String id,
             Authentication authentication) {
 
-        String email = authentication.getName();
+        String email = authentication.getName().trim();
 
         long ts = System.currentTimeMillis() / 1000;
 
         String token = signedUrlService.generateToken(id, email, ts);
 
-        // Note: urlEncoding of email is handled dynamically by string formatting if needed, 
-        // but typically email is safe in query params.
         String url = "https://securelearn-backend.onrender.com/api/student/pdf/"
                 + id + "?token=" + token + "&ts=" + ts + "&email=" + email;
 
-        return ResponseEntity.ok(url);
+        return ResponseEntity.ok(java.util.Map.of("url", url));
     }
     
 
