@@ -44,7 +44,7 @@ public class SignedUrlService {
 
         System.out.println("Expected token: " + expected);
 
-        if (Math.abs(now - ts) > 600) {
+        if (Math.abs(now - ts) > 3600) {
             System.out.println("FAILED: timestamp expired");
             return false;
         }
