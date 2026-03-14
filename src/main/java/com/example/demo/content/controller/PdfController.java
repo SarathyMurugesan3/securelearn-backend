@@ -40,7 +40,7 @@ public class PdfController {
         this.signedUrlService = signedUrlService;
     }
     
-    @GetMapping(value = "/url/{id}", produces = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping("/url/{id}")
     public ResponseEntity<String> getSignedPdfUrl(
             @PathVariable String id,
             Authentication authentication) {
