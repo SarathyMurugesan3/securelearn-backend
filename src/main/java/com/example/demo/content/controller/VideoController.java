@@ -38,7 +38,7 @@ public class VideoController {
         this.signedUrlService = signedUrlService;
     }
 
-    @GetMapping(value = "/url/{id}", produces = MediaType.TEXT_PLAIN_VALUE)
+    @GetMapping("/url/{id}")
     public ResponseEntity<String> getSignedVideoUrl(
             @PathVariable String id,
             Authentication authentication) {
@@ -54,18 +54,18 @@ public class VideoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResourceRegion> viewVideo(@PathVariable String id,
-                                                    @RequestParam String token,
-                                                    @RequestParam long ts,
-                                                    @RequestParam String email,
-                                                    @RequestHeader HttpHeaders headers) throws Exception {
+    public ResponseEntity<?> viewVideo(@PathVariable String id,
+                                       @RequestParam String token,
+                                       @RequestParam long ts,
+                                       @RequestParam String email,
+                                       @RequestHeader HttpHeaders headers) throws Exception {
 
         System.out.println("STEP 1: request received for video " + id);
         System.out.println("STEP 2: user email = " + email);
 
         if (!signedUrlService.validateToken(token, id, email, ts)) {
             System.out.println("STEP 3: token validation FAILED");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token validation failed");
         }
 
         System.out.println("STEP 4: token valid");
@@ -75,7 +75,7 @@ public class VideoController {
 
         if (student.getAdminId() == null) {
             System.out.println("STEP 6: student has no adminId");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Student has no assigned admin");
         }
 
         User admin = userRepository.findById(student.getAdminId())
@@ -86,35 +86,50 @@ public class VideoController {
 
         if (!admin.getEmail().equals(content.getUploadedBy())) {
             System.out.println("STEP 9: admin mismatch -> forbidden");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Content does not belong to your admin");
         }
 
         File videoFile = new File(content.getFilePath());
         if (!videoFile.exists()) {
             System.out.println("STEP 11: File missing on disk! (Probably wiped by Render)");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: The physical video file no longer exists on this server. " +
+                          "This happens on free Render tiers because the temporary folder resets. " +
+                          "Please re-upload the file.");
         }
 
         Resource videoResource = new FileSystemResource(videoFile);
-        ResourceRegion region = resourceRegion(videoResource, headers);
+        MediaType mediaType = MediaType.parseMediaType("video/mp4");
+
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(mediaType);
+        responseHeaders.set("Accept-Ranges", "bytes");
+
+        // If no Range header is present (e.g. Postman, direct link), return full file with 200 OK
+        if (headers.getRange().isEmpty()) {
+            System.out.println("STEP 12: No Range header — returning full video with 200 OK");
+            responseHeaders.setContentLength(videoResource.contentLength());
+            return ResponseEntity.ok()
+                    .headers(responseHeaders)
+                    .body(videoResource);
+        }
+
+        // Range request (browser video player) — return 206 Partial Content
+        System.out.println("STEP 12: Range header present — returning partial content 206");
+        HttpRange range = headers.getRange().get(0);
+        long contentLength = videoResource.contentLength();
+        long start = range.getRangeStart(contentLength);
+        long end = range.getRangeEnd(contentLength);
+        long rangeLength = Math.min(1024 * 1024, end - start + 1); // max 1 MB chunk
+
+        ResourceRegion region = new ResourceRegion(videoResource, start, rangeLength);
+
+        responseHeaders.set(HttpHeaders.CONTENT_RANGE,
+                "bytes " + start + "-" + (start + rangeLength - 1) + "/" + contentLength);
+        responseHeaders.setContentLength(rangeLength);
 
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                .contentType(MediaType.parseMediaType("video/mp4"))
+                .headers(responseHeaders)
                 .body(region);
-    }
-    
-    private ResourceRegion resourceRegion(Resource video, HttpHeaders headers) throws Exception {
-        long contentLength = video.contentLength();
-        if (headers.getRange().isEmpty()) {
-            // Default to returning the first 1MB if no range is specified
-            long rangeLength = Math.min(1024 * 1024, contentLength);
-            return new ResourceRegion(video, 0, rangeLength);
-        } else {
-            HttpRange range = headers.getRange().get(0);
-            long start = range.getRangeStart(contentLength);
-            long end = range.getRangeEnd(contentLength);
-            long rangeLength = Math.min(1024 * 1024, end - start + 1); // Limit chunk size to 1MB
-            return new ResourceRegion(video, start, rangeLength);
-        }
     }
 }
