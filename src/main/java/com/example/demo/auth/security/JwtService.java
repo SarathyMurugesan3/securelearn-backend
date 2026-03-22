@@ -33,9 +33,15 @@ public class JwtService {
 		this.refreshTokenExpiration = refreshExp;
 	}
 	
-	public String generateAccessToken(String email,String role) {
+	public String generateAccessToken(String email,String role, String tenantId, String sessionId) {
 		Map<String,Object> claims = new HashMap<>();
 		claims.put("role",role);
+		if (tenantId != null) {
+			claims.put("tenantId", tenantId);
+		}
+		if (sessionId != null) {
+			claims.put("sessionId", sessionId);
+		}
 		return buildToken(claims,email,accessTokenExpiration);
 	}
 	
@@ -55,7 +61,18 @@ public class JwtService {
 	}
 	public String extractEmail(String token) {
 		return extractAllClaims(token).getSubject();
-		
+	}
+
+	public String extractRole(String token) {
+		return extractAllClaims(token).get("role", String.class);
+	}
+
+	public String extractTenantId(String token) {
+		return extractAllClaims(token).get("tenantId", String.class);
+	}
+
+	public String extractSessionId(String token) {
+		return extractAllClaims(token).get("sessionId", String.class);
 	}
 	
 	public boolean isTokenValid(String token,String email) {

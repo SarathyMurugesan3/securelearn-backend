@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.monitoring.model.ActivityLog;
-import com.example.demo.monitoring.repository.ActivityLogRepository;
+import com.example.demo.activity.model.ActivityLog;
+import com.example.demo.activity.repository.ActivityLogRepository;
 import com.example.demo.monitoring.service.MonitoringService;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;

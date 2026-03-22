@@ -3,6 +3,7 @@ package com.example.demo.content.model;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "contents")
@@ -17,7 +18,12 @@ public class Content {
 	private String videoUrl;      // External secure video link (YouTube, Vimeo, Cloudflare Stream, etc.)
 	private String uploadedBy;
 	private LocalDateTime uploadedAt;
+	private String fileUrl;       // Cloudinary secure_url for the file
+	private String publicId;      // Cloudinary public_id for deletion
 	private String type;          // PDF | VIDEO | VIDEO_URL | UNKNOWN
+
+	@Indexed
+	private String tenantId;
 
 
 	public Content() {}
@@ -47,13 +53,15 @@ public class Content {
 
 	/** Full constructor */
 	public Content(String id, String title, String description, String fileName,
-				   String filePath, String videoUrl, String uploadedBy,
+				   String filePath, String fileUrl, String publicId, String videoUrl, String uploadedBy,
 				   LocalDateTime uploadedAt, String type) {
 		this.id = id;
 		this.title = title;
 		this.description = description;
 		this.fileName = fileName;
 		this.filePath = filePath;
+		this.fileUrl = fileUrl;
+		this.publicId = publicId;
 		this.videoUrl = videoUrl;
 		this.uploadedBy = uploadedBy;
 		this.uploadedAt = uploadedAt;
@@ -87,4 +95,13 @@ public class Content {
 
 	public String getType() { return type; }
 	public void setType(String type) { this.type = type; }
+
+	public String getTenantId() { return tenantId; }
+	public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+
+	public String getFileUrl() { return fileUrl; }
+	public void setFileUrl(String fileUrl) { this.fileUrl = fileUrl; }
+
+	public String getPublicId() { return publicId; }
+	public void setPublicId(String publicId) { this.publicId = publicId; }
 }

@@ -3,8 +3,9 @@ package com.example.demo.admin.service;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.admin.dto.DashboardStatsResponse;
+
+import com.example.demo.activity.repository.ActivityLogRepository;
 import com.example.demo.content.repository.ContentRepository;
-import com.example.demo.monitoring.repository.ActivityLogRepository;
 import com.example.demo.user.repository.UserRepository;
 
 @Service

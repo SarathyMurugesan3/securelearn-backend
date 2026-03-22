@@ -12,4 +12,7 @@ public interface ExamAttemptRepository extends MongoRepository<ExamAttempt, Stri
     List<ExamAttempt> findByExamId(String examId);
     List<ExamAttempt> findByUserId(String userId);
     Optional<ExamAttempt> findByUserIdAndExamId(String userId, String examId);
+    /** For attempt-limit enforcement: count ALL attempts (including submitted) */
+    long countByUserIdAndExamId(String userId, String examId);
+    List<ExamAttempt> findAllByUserIdAndExamId(String userId, String examId);
 }

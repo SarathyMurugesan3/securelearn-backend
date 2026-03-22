@@ -1,6 +1,8 @@
 package com.example.demo.auth.security;
 import java.io.IOException;
 
+import com.example.demo.auth.service.SessionService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,14 +21,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
+    private final SessionService sessionService;
 
     @Autowired
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService userDetailsService
+            CustomUserDetailsService userDetailsService,
+            SessionService sessionService
     ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.sessionService = sessionService;
     }
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -65,6 +70,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                String sessionId = jwtService.extractSessionId(jwt);
+                
+                if (sessionId == null || !sessionService.validateSession(sessionId)) {
+                    System.out.println("Inactive or missing session for token");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or invalid");
+                    return;
+                }
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(

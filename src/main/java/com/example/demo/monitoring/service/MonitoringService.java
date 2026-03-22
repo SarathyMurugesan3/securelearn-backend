@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.core.config.RiskProperties;
-import com.example.demo.monitoring.model.ActivityLog;
-import com.example.demo.monitoring.repository.ActivityLogRepository;
+import com.example.demo.activity.model.ActivityLog;
+import com.example.demo.activity.repository.ActivityLogRepository;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;
 
@@ -13,9 +13,6 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class MonitoringService {
-	
-	private static final int SCREENSHOT_RISK = 10;
-	private static final int BLOCK_THRESHOLD = 50;
 	
 	private final ActivityLogRepository activityLogRepository;
 	private final UserRepository userRepository;

@@ -30,7 +30,8 @@ public class SecurityConfig {
 
 	@Bean
 	public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+		provider.setUserDetailsService(userDetailsService);
 		provider.setPasswordEncoder(passwordEncoder);
 		return provider;
 	}
@@ -90,8 +91,10 @@ public class SecurityConfig {
 	                .requestMatchers("/actuator/**").permitAll()
 	                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 	                .requestMatchers("/api/student/video/**").permitAll()
-	                .requestMatchers("/api/student/pdf/{id}").permitAll() 
-	                .requestMatchers("/error").permitAll() // Allows Spring Boot to return actual 500 errors instead of masking them as 403
+	                .requestMatchers("/api/student/pdf/{id}").permitAll()
+	                .requestMatchers("/api/video/stream/{id}").permitAll()  // stream token self-validates
+	                .requestMatchers("/api/watermark").authenticated()       // requires valid JWT
+	                .requestMatchers("/error").permitAll()
 	                .requestMatchers("/api/student/**").hasAnyAuthority("STUDENT","ADMIN")
 	                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 	                .requestMatchers("/api/monitor/**").authenticated()

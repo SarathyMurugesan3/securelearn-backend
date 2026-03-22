@@ -3,7 +3,7 @@ package com.example.demo.user.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.types.ObjectId;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,7 +16,9 @@ public class User {
 	@Indexed(unique = true)
 	private String email;
 	private String password;
-	private String role;
+	private String role; // ADMIN, COMPANY, TUTOR, STUDENT
+	@Indexed
+	private String tenantId;
 	@Indexed
 	private int riskScore;
 	@Indexed
@@ -29,15 +31,16 @@ public class User {
 	private String adminId;
 	
 	public User() {}
-	public User( String name, String email, String password, String role, String adminId) {
+	public User( String name, String email, String password, String role, String tenantId, String adminId) {
 		super();
 		this.name = name;
 		this.email = email;
 		this.password = password;
 		this.role = role;
+		this.tenantId = tenantId;
 		this.adminId = adminId;
 	}
-	public User(String id, String name, String email, String password, String role, int riskScore, boolean blocked,
+	public User(String id, String name, String email, String password, String role, String tenantId, int riskScore, boolean blocked,
 			List<String> deviceFingerprints, String adminId) {
 		super();
 		this.id = id;
@@ -45,6 +48,7 @@ public class User {
 		this.email = email;
 		this.password = password;
 		this.role = role;
+		this.tenantId = tenantId;
 		this.riskScore = riskScore;
 		this.blocked = blocked;
 		this.deviceFingerprints = deviceFingerprints;
@@ -109,5 +113,11 @@ public class User {
 	}
 	public void setAdminId(String adminId) {
 		this.adminId = adminId;
+	}
+	public String getTenantId() {
+		return tenantId;
+	}
+	public void setTenantId(String tenantId) {
+		this.tenantId = tenantId;
 	}
 }

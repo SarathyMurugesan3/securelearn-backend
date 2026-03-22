@@ -1,6 +1,7 @@
 package com.example.demo.exam.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.List;
 public class Question {
     @Id
     private String id;
+    @Indexed
+    private String examId;   // NEW — for direct exam → questions lookup
     private String text;
     private List<String> options;
     private String correctAnswer;
@@ -52,4 +55,7 @@ public class Question {
     public void setCorrectAnswer(String correctAnswer) {
         this.correctAnswer = correctAnswer;
     }
+
+    public String getExamId()            { return examId; }
+    public void   setExamId(String v)   { this.examId = v; }
 }

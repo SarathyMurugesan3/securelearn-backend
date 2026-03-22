@@ -1,6 +1,7 @@
 package com.example.demo.exam.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -10,11 +11,15 @@ import java.util.Map;
 public class ExamAttempt {
     @Id
     private String id;
+    @Indexed
     private String userId;
+    @Indexed
     private String examId;
+    @Indexed
+    private String tenantId;   // NEW — for tenant-scoped admin queries
     private int score;
     private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDateTime endTime;   // = submittedAt
     
     // Map of Question ID to Student's Selected Option
     private Map<String, String> answers;
@@ -131,4 +136,10 @@ public class ExamAttempt {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getTenantId()             { return tenantId; }
+    public void   setTenantId(String v)    { this.tenantId = v; }
+
+    /** Alias for endTime — matches the requested field name. */
+    public LocalDateTime getSubmittedAt()   { return endTime; }
 }

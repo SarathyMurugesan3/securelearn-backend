@@ -1,6 +1,7 @@
 package com.example.demo.exam.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -13,8 +14,20 @@ public class Exam {
     private String description;
     private int durationMinutes;
     private int passingScore;
+    private int totalMarks;               // NEW: max marks for auto-score calculation
     private List<String> questionIds;
     private String adminId;
+
+    // NEW: multi-tenant + course/module scoping
+    @Indexed
+    private String courseId;
+    @Indexed
+    private String moduleId;
+    @Indexed
+    private String tenantId;
+
+    /** If false (default), a student may only attempt this exam once. */
+    private boolean allowMultipleAttempts = false;
 
     public Exam() {}
 
@@ -82,4 +95,19 @@ public class Exam {
     public void setAdminId(String adminId) {
         this.adminId = adminId;
     }
+
+    public String getCourseId()                { return courseId; }
+    public void   setCourseId(String v)       { this.courseId = v; }
+
+    public String getModuleId()                { return moduleId; }
+    public void   setModuleId(String v)       { this.moduleId = v; }
+
+    public String getTenantId()                { return tenantId; }
+    public void   setTenantId(String v)       { this.tenantId = v; }
+
+    public int  getTotalMarks()                { return totalMarks; }
+    public void setTotalMarks(int v)          { this.totalMarks = v; }
+
+    public boolean isAllowMultipleAttempts()           { return allowMultipleAttempts; }
+    public void    setAllowMultipleAttempts(boolean v) { this.allowMultipleAttempts = v; }
 }

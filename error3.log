@@ -1,0 +1,42 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< com.example:secure-edtech-backend >------------------
+[INFO] Building secure-edtech-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ secure-edtech-backend ---
+[INFO] Deleting F:\secure-edtech-backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ secure-edtech-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ secure-edtech-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 86 source files with javac [debug release 17] to target\classes
+[INFO] /F:/secure-edtech-backend/src/main/java/com/example/demo/watermark/PdfWatermarkService.java: F:\secure-edtech-backend\src\main\java\com\example\demo\watermark\PdfWatermarkService.java uses or overrides a deprecated API.
+[INFO] /F:/secure-edtech-backend/src/main/java/com/example/demo/watermark/PdfWatermarkService.java: Recompile with -Xlint:deprecation for details.
+[INFO] Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /F:/secure-edtech-backend/src/main/java/com/example/demo/auth/security/SecurityConfig.java:[33,84] incompatible types: com.example.demo.auth.security.CustomUserDetailsService cannot be converted to org.springframework.security.crypto.password.PasswordEncoder
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.769 s
+[INFO] Finished at: 2026-03-22T20:32:55+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project secure-edtech-backend: Compilation failure
+[ERROR] /F:/secure-edtech-backend/src/main/java/com/example/demo/auth/security/SecurityConfig.java:[33,84] incompatible types: com.example.demo.auth.security.CustomUserDetailsService cannot be converted to org.springframework.security.crypto.password.PasswordEncoder
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

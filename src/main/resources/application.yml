@@ -20,11 +20,19 @@ spring:
   data:
     mongodb:
       auto-index-creation: false
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour
 
   main:
     lazy-initialization: false
   mongodb:
-    uri: ${MONGODB_URI}
+    uri: ${MONGODB_URI:mongodb://localhost:27017/secure-edtech}
 
 management:
   endpoints:
@@ -40,7 +48,7 @@ management:
 
 securelearn:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:defaultSecretKeyForTestingAndDevelopmentMustBeLongEnough1234567890}
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
 
@@ -58,4 +66,9 @@ securelearn:
 logging:
   level:
     root: INFO
-    org.springframework: DEBUG
+    org.springframework: INFO
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:your-cloud-name}
+  api-key: ${CLOUDINARY_API_KEY:your-api-key}
+  api-secret: ${CLOUDINARY_API_SECRET:your-api-secret}

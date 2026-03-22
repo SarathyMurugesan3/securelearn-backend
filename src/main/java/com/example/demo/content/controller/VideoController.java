@@ -12,9 +12,12 @@ import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 
+import com.example.demo.activity.service.ActivityLogService;
 import com.example.demo.auth.security.SignedUrlService;
 import com.example.demo.content.model.Content;
 import com.example.demo.content.repository.ContentRepository;
+import com.example.demo.risk.model.UserRisk;
+import com.example.demo.risk.service.RiskEngineService;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;
 
@@ -27,15 +30,21 @@ public class VideoController {
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
     private final SignedUrlService signedUrlService;
+    private final RiskEngineService riskEngineService;
+    private final ActivityLogService activityLogService;
 
     @Autowired
     public VideoController(ContentRepository contentRepository,
                            UserRepository userRepository,
-                           SignedUrlService signedUrlService) {
+                           SignedUrlService signedUrlService,
+                           RiskEngineService riskEngineService,
+                           ActivityLogService activityLogService) {
 
         this.contentRepository = contentRepository;
         this.userRepository = userRepository;
         this.signedUrlService = signedUrlService;
+        this.riskEngineService = riskEngineService;
+        this.activityLogService = activityLogService;
     }
 
     @GetMapping("/url/{id}")
@@ -73,10 +82,24 @@ public class VideoController {
         User student = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Risk guard: block access for blocked users or those above risk threshold
+        if (student.isBlocked()) {
+            System.out.println("RISK BLOCK: user " + email + " is blocked");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: account is blocked due to high risk score");
+        }
+        UserRisk risk = riskEngineService.getRisk(student.getId());
+        if (risk != null && risk.getRiskScore() > 100) {
+            System.out.println("RISK RESTRICT: user " + email + " risk score = " + risk.getRiskScore());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: risk score too high");
+        }
+
         if (student.getAdminId() == null) {
             System.out.println("STEP 6: student has no adminId");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Student has no assigned admin");
         }
+
+        // Log video play event asynchronously
+        activityLogService.logAction(student.getId(), student.getTenantId(), "PLAY_VIDEO", null);
 
         User admin = userRepository.findById(student.getAdminId())
                 .orElseThrow(() -> new RuntimeException("Admin not found"));

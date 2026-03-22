@@ -1,6 +1,5 @@
 package com.example.demo.content.controller;
 
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,12 +11,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.activity.service.ActivityLogService;
 import com.example.demo.auth.security.SignedUrlService;
 import com.example.demo.content.model.Content;
 import com.example.demo.content.repository.ContentRepository;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;
 import com.example.demo.watermark.PdfWatermarkService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/student/pdf")
@@ -27,17 +29,20 @@ public class PdfController {
     private final PdfWatermarkService watermarkService;
     private final UserRepository userRepository;
     private final SignedUrlService signedUrlService;
+    private final ActivityLogService activityLogService;
 
     @Autowired
     public PdfController(ContentRepository contentRepository,
                          PdfWatermarkService watermarkService,
                          UserRepository userRepository,
-                         SignedUrlService signedUrlService) {
+                         SignedUrlService signedUrlService,
+                         ActivityLogService activityLogService) {
 
         this.contentRepository = contentRepository;
         this.watermarkService = watermarkService;
         this.userRepository = userRepository;
         this.signedUrlService = signedUrlService;
+        this.activityLogService = activityLogService;
     }
     
     @GetMapping("/url/{id}")
@@ -64,7 +69,8 @@ public class PdfController {
     public ResponseEntity<byte[]> viewPdf(@PathVariable String id,
                                           @RequestParam String token,
                                           @RequestParam long ts,
-                                          @RequestParam String email) throws Exception {
+                                          @RequestParam String email,
+                                          HttpServletRequest request) throws Exception {
 
         System.out.println("STEP 1: request received for pdf " + id);
         System.out.println("STEP 2: user email = " + email);
@@ -103,20 +109,32 @@ public class PdfController {
 
         System.out.println("STEP 10: permission OK");
 
+        // Log PDF access event asynchronously
+        activityLogService.logAction(student.getId(), student.getTenantId(), "ACCESS_PDF", null);
+
         java.io.File pdfFile = new java.io.File(content.getFilePath());
         if (!pdfFile.exists()) {
             System.out.println("STEP 11: File missing on disk! (Probably wiped by Render)");
             return ResponseEntity.status(404).body("Error: The physical PDF file no longer exists on this server. This happens on free Render tiers because the temporary folder resets. Please re-upload the document.".getBytes());
         }
 
-        String watermarkText = student.getEmail() + " | IP Tracked | SecureLearn";
+        String line1 = student.getEmail();
+        String line2 = resolveClientIp(request) + " | " + java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'"));
 
-        byte[] watermarkedPdf =
-                watermarkService.addWatermark(content.getFilePath(), watermarkText);
+        byte[] watermarkedPdf = watermarkService.addWatermark(content.getFilePath(), line1, line2);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=secure.pdf")
                 .body(watermarkedPdf);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) return realIp.trim();
+        return request.getRemoteAddr();
     }
 }

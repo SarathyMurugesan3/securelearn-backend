@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.monitoring.model.ActivityLog;
-import com.example.demo.monitoring.repository.ActivityLogRepository;
+import com.example.demo.activity.model.ActivityLog;
+import com.example.demo.activity.repository.ActivityLogRepository;
 
 @RestController
 @RequestMapping("/api/admin/activity")

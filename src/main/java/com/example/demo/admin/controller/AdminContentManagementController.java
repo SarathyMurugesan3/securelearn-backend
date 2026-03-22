@@ -13,16 +13,19 @@ import org.springframework.security.core.Authentication;
 
 import com.example.demo.content.model.Content;
 import com.example.demo.content.repository.ContentRepository;
+import com.example.demo.content.service.FileStorageService;
 
 @RestController
 @RequestMapping("/api/admin/manage-content")
 public class AdminContentManagementController {
 	
 	private final ContentRepository contentRepository;
+	private final FileStorageService storageService;
 	
 	@Autowired
-	public AdminContentManagementController(ContentRepository contentRepository) {
+	public AdminContentManagementController(ContentRepository contentRepository, FileStorageService storageService) {
 		this.contentRepository = contentRepository;
+		this.storageService = storageService;
 	}
 	
 	@GetMapping
@@ -38,7 +41,12 @@ public class AdminContentManagementController {
 		if(!content.getUploadedBy().equals(adminEmail)){
 			throw new RuntimeException("Unauthorized");
 		}
-		new File(content.getFilePath()).delete();
+		if (content.getPublicId() != null) {
+			storageService.deleteFile(content.getPublicId());
+		} else if (content.getFilePath() != null) {
+			// Legacy fallback
+			new File(content.getFilePath()).delete();
+		}
 		contentRepository.delete(content);
 		return "Content deleted";
 	}
