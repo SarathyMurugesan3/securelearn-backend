@@ -20,9 +20,12 @@ spring:
   data:
     mongodb:
       auto-index-creation: false
+      uri: ${MONGODB_URI:mongodb://localhost:27017/secure-edtech}
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
 
   cache:
     type: redis
@@ -31,9 +34,6 @@ spring:
 
   main:
     lazy-initialization: false
-  mongodb:
-    uri: ${MONGODB_URI:mongodb://localhost:27017/secure-edtech}
-
 management:
   endpoints:
     web:
