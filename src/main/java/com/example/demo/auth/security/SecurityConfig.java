@@ -74,12 +74,11 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(
 	        HttpSecurity http,
-	        DaoAuthenticationProvider authenticationProvider,
-	        CorsConfigurationSource corsConfigurationSource) throws Exception {
+	        DaoAuthenticationProvider authenticationProvider) throws Exception {
 
 	    http
 	        .authenticationProvider(authenticationProvider)
-	        .cors(cors -> cors.configurationSource(corsConfigurationSource))
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 	        .csrf(csrf -> csrf.disable())
 	        .sessionManagement(session ->
 	                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -99,11 +98,6 @@ public class SecurityConfig {
 	                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 	                .requestMatchers("/api/monitor/**").authenticated()
 	                .anyRequest().authenticated()
-	        )
-	        .exceptionHandling(exceptions -> exceptions
-	                .authenticationEntryPoint((request, response, authException) -> {
-	                    response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
-	                })
 	        )
 	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

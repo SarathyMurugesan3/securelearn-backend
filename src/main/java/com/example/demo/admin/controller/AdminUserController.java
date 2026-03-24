@@ -46,6 +46,7 @@ public class AdminUserController {
 		// Force role to STUDENT and bind to this admin
 		request.setRole("STUDENT");
 		request.setAdminId(admin.getId());
+		request.setTenantId(admin.getTenantId());
 
 		User created = userService.createUser(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);

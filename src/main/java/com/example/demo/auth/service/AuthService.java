@@ -52,7 +52,7 @@ public class AuthService {
 			throw new RuntimeException("Invalid email or password");
 		}
 		User user = userRepository.findByEmail(request.getEmail()).orElseThrow(()-> new RuntimeException("User not found"));
-		if(user.isBlocked()) {
+		if(user.isBlocked() && !"ADMIN".equals(user.getRole())) {
 			throw new RuntimeException("User is blocked due to risk score");
 		}
 		System.out.println("DEBUG USER: " + user);
@@ -62,13 +62,15 @@ public class AuthService {
 		String deviceInfo = httpRequest.getHeader("User-Agent");
 		com.example.demo.auth.model.UserSession session = sessionService.createSession(user, ipAddress, deviceInfo);
 
-		// Risk scoring — runs after session creation so concurrent-session rule sees this session
-		riskEngineService.calculateRisk(user, ipAddress, deviceInfo);
-		// Re-fetch user in case block status was just set by risk engine
-		user = userRepository.findByEmail(user.getEmail()).orElseThrow();
-		if (user.isBlocked()) {
-			sessionService.invalidateSession(session.getId());
-			throw new RuntimeException("Account blocked due to high risk score");
+		// Risk scoring — only for non-ADMIN users; admins are exempt from risk-based blocking
+		if (!"ADMIN".equals(user.getRole())) {
+			riskEngineService.calculateRisk(user, ipAddress, deviceInfo);
+			// Re-fetch user in case block status was just set by risk engine
+			user = userRepository.findByEmail(user.getEmail()).orElseThrow();
+			if (user.isBlocked()) {
+				sessionService.invalidateSession(session.getId());
+				throw new RuntimeException("Account blocked due to high risk score");
+			}
 		}
 
 		String accessToken = jwtService.generateAccessToken(user.getEmail(), user.getRole(), user.getTenantId(), session.getId());

@@ -20,6 +20,8 @@ public class CreateUserRequest {
 	
 	private String adminId;
 	
+	private String tenantId;
+	
 	public CreateUserRequest() {}
 
 	public String getName() {
@@ -60,5 +62,13 @@ public class CreateUserRequest {
 
 	public void setAdminId(String adminId) {
 		this.adminId = adminId;
+	}
+
+	public String getTenantId() {
+		return tenantId;
+	}
+
+	public void setTenantId(String tenantId) {
+		this.tenantId = tenantId;
 	}
 }

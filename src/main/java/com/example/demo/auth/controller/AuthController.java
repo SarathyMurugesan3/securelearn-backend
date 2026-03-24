@@ -79,6 +79,7 @@ public class AuthController {
 		// Force role to STUDENT and auto-link to this admin
 		request.setRole("STUDENT");
 		request.setAdminId(admin.getId());
+		request.setTenantId(admin.getTenantId());
 		
 		User user = userService.createUser(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(user);
