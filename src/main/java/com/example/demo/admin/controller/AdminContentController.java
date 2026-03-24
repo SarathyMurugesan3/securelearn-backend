@@ -2,7 +2,6 @@ package com.example.demo.admin.controller;
 
 import java.io.IOException;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -46,7 +45,6 @@ public class AdminContentController {
 	}
 
 	@PostMapping("/upload")
-	@CacheEvict(value = "contents", key = "#admin.tenantId", allEntries = true)
 	public ResponseEntity<String> upload(
 	        @RequestParam String title,
 	        @RequestParam(required = false) String description,
@@ -101,7 +99,6 @@ public class AdminContentController {
 	}
 
 	@DeleteMapping("/{id}")
-	@CacheEvict(value = "contents", key = "#admin.tenantId", allEntries = true)
 	public ResponseEntity<?> deleteContent(@PathVariable String id, Authentication authentication) {
 	    String email = authentication.getName();
 	    userRepository.findByEmail(email)

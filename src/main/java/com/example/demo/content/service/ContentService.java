@@ -7,7 +7,7 @@ import com.example.demo.content.repository.ContentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.cache.annotation.Cacheable;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +19,6 @@ public class ContentService {
         this.contentRepository = contentRepository;
     }
 
-    @Cacheable(value = "contents", key = "#tenantId + '-' + #page + '-' + #size")
     public Page<ContentResponse> listAllContent(String tenantId, int page, int size) {
         // Enforced tenant isolation
         Pageable pageable = PageRequest.of(page, size);
