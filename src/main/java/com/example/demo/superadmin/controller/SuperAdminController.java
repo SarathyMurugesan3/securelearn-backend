@@ -39,7 +39,7 @@ public class SuperAdminController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody SuperAdminLoginRequest request) {
         try {
-            String token = superAdminService.authenticate(request.getUsername(), request.getPassword());
+            String token = superAdminService.authenticate(request.getEmail(), request.getPassword());
             return ResponseEntity.ok(new SuperAdminLoginResponse(token));
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());

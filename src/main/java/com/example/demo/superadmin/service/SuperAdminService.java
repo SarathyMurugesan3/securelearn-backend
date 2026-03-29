@@ -17,7 +17,7 @@ import com.example.demo.user.repository.UserRepository;
 @Service
 public class SuperAdminService {
 
-    private final String superAdminUsername;
+    private final String superAdminEmail;
     private final String superAdminPassword;
 
     private final JwtService jwtService;
@@ -25,12 +25,12 @@ public class SuperAdminService {
     private final UserRepository userRepository;
 
     public SuperAdminService(
-            @Value("${super.admin.username:superadmin}") String superAdminUsername,
+            @Value("${super.admin.email:superadmin@securelearn.com}") String superAdminEmail,
             @Value("${super.admin.password:secure123}") String superAdminPassword,
             JwtService jwtService,
             TenantRepository tenantRepository,
             UserRepository userRepository) {
-        this.superAdminUsername = superAdminUsername;
+        this.superAdminEmail = superAdminEmail;
         this.superAdminPassword = superAdminPassword;
         this.jwtService = jwtService;
         this.tenantRepository = tenantRepository;
@@ -41,14 +41,14 @@ public class SuperAdminService {
      * Authenticate super admin utilizing explicitly hardcoded/env credentials.
      * Returns a valid JWT with the "SUPER_ADMIN" role on success.
      */
-    public String authenticate(String username, String password) {
-        if (!superAdminUsername.equals(username) || !superAdminPassword.equals(password)) {
+    public String authenticate(String email, String password) {
+        if (!superAdminEmail.equals(email) || !superAdminPassword.equals(password)) {
             throw new SecurityException("Invalid super admin credentials");
         }
         
         // Generate Token: (email, role, tenantId, sessionId)
         // Set tenantId to null and sessionId to null. The JwtAuthenticationFilter will bypass sessionId checks for this role.
-        return jwtService.generateAccessToken(username, "SUPER_ADMIN", null, null);
+        return jwtService.generateAccessToken(email, "SUPER_ADMIN", null, null);
     }
 
     public List<Tenant> getAllTenants() {

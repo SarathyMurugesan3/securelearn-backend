@@ -55,6 +55,11 @@ securelearn:
   storage:
     pdf-path: /tmp/pdf/
     video-path: /tmp/video/
+
+super:
+  admin:
+    email: ${SUPER_ADMIN_EMAIL:superadmin@securelearn.com}
+    password: ${SUPER_ADMIN_PASSWORD:secure123}
 logging:
   level:
     root: INFO
