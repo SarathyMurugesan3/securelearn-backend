@@ -36,9 +36,20 @@ public class MonitoringService {
 		userRepository.save(user);
 	}
 	
-	
+	public void logSecurityEvent(User user, String violationType, int riskScore, HttpServletRequest request) {
+		String ip = request.getHeader("X-Forwarded-For");
+		if (ip == null || ip.isEmpty()) {
+			ip = request.getRemoteAddr();
+		}
+		ActivityLog log = new ActivityLog(user.getId(), violationType, ip, "N/A", user.getAdminId());
+		activityLogRepository.save(log);
+		
+		int newRisk = user.getRiskScore() + riskScore;
+		user.setRiskScore(newRisk);
+		if (newRisk >= riskProperties.getBlockThreshold()) {
+			user.setBlocked(true);
+		}
+		userRepository.save(user);
+	}
 }
-
-
-
 
