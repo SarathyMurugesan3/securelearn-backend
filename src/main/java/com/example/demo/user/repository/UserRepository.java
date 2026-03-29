@@ -23,4 +23,12 @@ public interface UserRepository extends MongoRepository<User,String> {
 	long countByAdminId(String adminId);
 	long countByBlockedAndAdminId(boolean blocked, String adminId);
 	long countByRiskScoreGreaterThanAndAdminId(int riskScore, String adminId);
+
+	// Tenant Scoped Methods
+	Page<User> findByTenantId(String tenantId, Pageable pageable);
+	Page<User> findByBlockedAndTenantId(boolean blocked, String tenantId, Pageable pageable);
+	Page<User> findByRiskScoreGreaterThanAndTenantId(int riskScore, String tenantId, Pageable pageable);
+	long countByTenantId(String tenantId);
+	long countByBlockedAndTenantId(boolean blocked, String tenantId);
+	long countByRiskScoreGreaterThanAndTenantId(int riskScore, String tenantId);
 }

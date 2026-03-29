@@ -8,4 +8,7 @@ import com.example.demo.risk.model.RiskEvent;
 
 public interface RiskEventRepository extends MongoRepository<RiskEvent, String> {
     List<RiskEvent> findByUserIdOrderByOccurredAtDesc(String userId);
+
+    // Tenant Scoped Isolation
+    List<RiskEvent> findByTenantIdOrderByOccurredAtDesc(String tenantId);
 }

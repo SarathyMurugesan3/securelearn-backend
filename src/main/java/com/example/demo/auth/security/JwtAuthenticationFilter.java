@@ -80,12 +80,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                String sessionId = jwtService.extractSessionId(jwt);
-                
-                if (sessionId == null || !sessionService.validateSession(sessionId)) {
-                    System.out.println("Inactive or missing session for token");
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or invalid");
-                    return;
+                if (!"SUPER_ADMIN".equalsIgnoreCase(userDetails.getAuthorities().iterator().next().getAuthority())) {
+                    String sessionId = jwtService.extractSessionId(jwt);
+                    if (sessionId == null || !sessionService.validateSession(sessionId)) {
+                        System.out.println("Inactive or missing session for token");
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or invalid");
+                        return;
+                    }
                 }
 
                 UsernamePasswordAuthenticationToken authToken =

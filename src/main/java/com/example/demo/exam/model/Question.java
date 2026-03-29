@@ -11,6 +11,8 @@ public class Question {
     @Id
     private String id;
     @Indexed
+    private String tenantId;
+    @Indexed
     private String examId;   // NEW — for direct exam → questions lookup
     private String text;
     private List<String> options;
@@ -18,10 +20,11 @@ public class Question {
 
     public Question() {}
 
-    public Question(String text, List<String> options, String correctAnswer) {
+    public Question(String text, List<String> options, String correctAnswer, String tenantId) {
         this.text = text;
         this.options = options;
         this.correctAnswer = correctAnswer;
+        this.tenantId = tenantId;
     }
 
     public String getId() {
@@ -58,4 +61,12 @@ public class Question {
 
     public String getExamId()            { return examId; }
     public void   setExamId(String v)   { this.examId = v; }
+    
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 }

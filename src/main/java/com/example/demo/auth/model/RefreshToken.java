@@ -14,11 +14,13 @@ public class RefreshToken {
 	private String email;
 	private String token;
 	private LocalDateTime expiry;
+	private String tenantId;
 	public RefreshToken() {}
-	public RefreshToken(String email,String token,LocalDateTime expiry) {
+	public RefreshToken(String email,String token,LocalDateTime expiry, String tenantId) {
 		this.email = email;
 		this.token = token;
 		this.expiry = expiry;
+		this.tenantId = tenantId;
 	}
 	
 	public String getEmail() {
@@ -30,5 +32,10 @@ public class RefreshToken {
 	public LocalDateTime getExpiry() {
 		return expiry;
 	}
-	
+	public String getTenantId() {
+		return tenantId;
+	}
+	public void setTenantId(String tenantId) {
+		this.tenantId = tenantId;
+	}
 }

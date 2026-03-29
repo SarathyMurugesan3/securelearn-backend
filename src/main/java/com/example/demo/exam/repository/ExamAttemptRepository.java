@@ -15,4 +15,8 @@ public interface ExamAttemptRepository extends MongoRepository<ExamAttempt, Stri
     /** For attempt-limit enforcement: count ALL attempts (including submitted) */
     long countByUserIdAndExamId(String userId, String examId);
     List<ExamAttempt> findAllByUserIdAndExamId(String userId, String examId);
+    
+    // Tenant Scoped Isolation
+    List<ExamAttempt> findByTenantId(String tenantId);
+    List<ExamAttempt> findByExamIdAndTenantId(String examId, String tenantId);
 }

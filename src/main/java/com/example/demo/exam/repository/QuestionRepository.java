@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface QuestionRepository extends MongoRepository<Question, String> {
+	java.util.List<Question> findByTenantId(String tenantId);
+	java.util.List<Question> findByExamIdAndTenantId(String examId, String tenantId);
 }

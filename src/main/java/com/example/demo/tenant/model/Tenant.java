@@ -12,13 +12,16 @@ public class Tenant {
     private String id;
     private String name;
     private String type; // EDTECH_COMPANY or SOLO_TUTOR
+    private boolean blocked; // Super Admin kill-switch
     private LocalDateTime createdAt;
 
-    public Tenant() {}
+    public Tenant() {
+    }
 
     public Tenant(String name, String type) {
         this.name = name;
         this.type = type;
+        this.blocked = false;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -52,5 +55,13 @@ public class Tenant {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(boolean blocked) {
+        this.blocked = blocked;
     }
 }

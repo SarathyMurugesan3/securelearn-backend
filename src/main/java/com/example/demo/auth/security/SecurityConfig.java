@@ -21,15 +21,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class SecurityConfig {
-	
+
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-	    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 	}
 
 	@Bean
-	public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+	public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService,
+			PasswordEncoder passwordEncoder) {
 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
 		provider.setUserDetailsService(userDetailsService);
 		provider.setPasswordEncoder(passwordEncoder);
@@ -40,7 +41,7 @@ public class SecurityConfig {
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
+
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
 		return configuration.getAuthenticationManager();
@@ -55,12 +56,11 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOriginPatterns(List.of(
-			    "http://localhost:5173",
-			    "https://securelearn-frontend.vercel.app",
-			    "*"
-			));
+				"http://localhost:5173",
+				"https://securelearn-frontend.vercel.app",
+				"*"));
 		config.setAllowCredentials(true); // Allow all origins (localhost:5173, Vercel, Netlify, etc.)
-		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH","OPTIONS"));
+		config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "OPTIONS"));
 		config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Device-Fingerprint", "Accept"));
 		config.setExposedHeaders(List.of("Authorization"));
 		config.setAllowCredentials(true);
@@ -70,37 +70,38 @@ public class SecurityConfig {
 		source.registerCorsConfiguration("/**", config);
 		return source;
 	}
-	
+
 	@Bean
 	public SecurityFilterChain filterChain(
-	        HttpSecurity http,
-	        DaoAuthenticationProvider authenticationProvider) throws Exception {
+			HttpSecurity http,
+			DaoAuthenticationProvider authenticationProvider) throws Exception {
 
-	    http
-	        .authenticationProvider(authenticationProvider)
-	        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-	        .csrf(csrf -> csrf.disable())
-	        .sessionManagement(session ->
-	                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-	        )
-	        .authorizeHttpRequests(auth -> auth
-	        		.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-	                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
-	                .requestMatchers("/api/auth/admin/**").hasAuthority("ADMIN")
-	                .requestMatchers("/actuator/**").permitAll()
-	                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-	                .requestMatchers("/api/student/video/**").permitAll()
-	                .requestMatchers("/api/student/pdf/{id}").permitAll()
-	                .requestMatchers("/api/video/stream/{id}").permitAll()  // stream token self-validates
-	                .requestMatchers("/api/watermark").authenticated()       // requires valid JWT
-	                .requestMatchers("/error").permitAll()
-	                .requestMatchers("/api/student/**").hasAnyAuthority("STUDENT","ADMIN")
-	                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-	                .requestMatchers("/api/monitor/**").authenticated()
-	                .anyRequest().authenticated()
-	        )
-	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+		http
+				.authenticationProvider(authenticationProvider)
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.csrf(csrf -> csrf.disable())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh",
+								"/api/auth/logout")
+						.permitAll()
+						.requestMatchers("/api/super-admin/login").permitAll()
+						.requestMatchers("/api/super-admin/**").hasAuthority("SUPER_ADMIN")
+						.requestMatchers("/api/auth/admin/**").hasAuthority("ADMIN")
+						.requestMatchers("/actuator/**").permitAll()
+						.requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+						.requestMatchers("/api/student/video/**").permitAll()
+						.requestMatchers("/api/student/pdf/{id}").permitAll()
+						.requestMatchers("/api/video/stream/{id}").permitAll() // stream token self-validates
+						.requestMatchers("/api/watermark").authenticated() // requires valid JWT
+						.requestMatchers("/error").permitAll()
+						.requestMatchers("/api/student/**").hasAnyAuthority("STUDENT", "ADMIN")
+						.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+						.requestMatchers("/api/monitor/**").authenticated()
+						.anyRequest().authenticated())
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-	    return http.build();
+		return http.build();
 	}
 }

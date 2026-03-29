@@ -11,24 +11,35 @@ import com.example.demo.user.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-	
+
 	private final UserRepository userRepository;
-	
+
 	@Autowired
 	public CustomUserDetailsService(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}
-	
+
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-		User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+		// Synthetic user interception for Super Admin (avoids DB hit)
+		if ("superadmin".equals(email)) {
+			return org.springframework.security.core.userdetails.User.builder()
+					.username("superadmin")
+					.password("") // Password is not evaluated here during JWT parsing
+					.authorities("SUPER_ADMIN")
+					.disabled(false)
+					.build();
+		}
+
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 		String roleName = user.getRole().toUpperCase().trim();
-	    
-	    return org.springframework.security.core.userdetails.User.builder()
-	            .username(user.getEmail())
-	            .password(user.getPassword())
-	            .authorities(roleName) // This sets the authority to "STUDENT"
-	            .disabled(user.isBlocked())
-	            .build();
+
+		return org.springframework.security.core.userdetails.User.builder()
+				.username(user.getEmail())
+				.password(user.getPassword())
+				.authorities(roleName) // This sets the authority to "STUDENT"
+				.disabled(user.isBlocked())
+				.build();
 	}
 }
