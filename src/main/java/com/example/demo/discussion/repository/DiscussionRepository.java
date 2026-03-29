@@ -25,7 +25,4 @@ public interface DiscussionRepository extends MongoRepository<DiscussionMessage,
     /** Count active messages in thread (used for thread listing summary). */
     long countByThreadIdAndTenantIdAndDeletedFalse(String threadId, String tenantId);
 
-    /** Legacy module-scoped query retained for backward compatibility. */
-    Page<DiscussionMessage> findByModuleIdAndTenantIdAndDeletedFalseOrderByCreatedAtDesc(
-            String moduleId, String tenantId, Pageable pageable);
 }
