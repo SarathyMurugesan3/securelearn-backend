@@ -51,6 +51,12 @@ public class AdminUserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Invalid role. Admin can only create TUTOR or STUDENT users.");
         }
+        
+        // Prevent horizontal privilege escalation: TUTORs cannot create other TUTORs
+        if ("TUTOR".equals(admin.getRole()) && requestedRole.equalsIgnoreCase("TUTOR")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Tutors are only permitted to create STUDENT accounts.");
+        }
 
         request.setRole(requestedRole.toUpperCase());
         request.setAdminId(admin.getId());
