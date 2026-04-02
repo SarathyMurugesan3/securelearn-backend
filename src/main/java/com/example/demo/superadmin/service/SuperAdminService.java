@@ -25,8 +25,8 @@ public class SuperAdminService {
     private final UserRepository userRepository;
 
     public SuperAdminService(
-            @Value("${super.admin.email:superadmin@securelearn.com}") String superAdminEmail,
-            @Value("${super.admin.password:secure123}") String superAdminPassword,
+            @Value("${super.admin.email}") String superAdminEmail,
+            @Value("${super.admin.password}") String superAdminPassword,
             JwtService jwtService,
             TenantRepository tenantRepository,
             UserRepository userRepository) {
