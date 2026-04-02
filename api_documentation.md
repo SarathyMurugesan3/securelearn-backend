@@ -1,146 +1,139 @@
-# SecureLearn Backend API Documentation
+# SecureLearn Backend API Documentation & Workflows
 
 All secure endpoints require the `Authorization` header to be sent with a valid JWT.
 **Format**: `Authorization: Bearer <your_jwt_token>`
 
----
-
-## 1. Authentication Flow
-
-### User Login
-Authenticates users of all roles (SUPER_ADMIN, ADMIN (Company/Tutor), STUDENT) and returns a JWT token.
-* **URL**: `/api/auth/login`
-* **Method**: `POST`
-* **Headers**: `Content-Type: application/json`
-* **Body**:
-  ```json
-  {
-    "email": "user@example.com",
-    "password": "password123"
-  }
-  ```
-* **Response**:
-  ```json
-  {
-    "token": "eyJhb...",
-    "refreshToken": "eyJhb...",
-    "user": { ... }
-  }
-  ```
-
-### Super Admin Login
-Dedicated login route for Super Admins.
-* **URL**: `/api/super-admin/login`
-* **Method**: `POST`
-* **Headers**: `Content-Type: application/json`
-* **Body**:
-  ```json
-  {
-    "email": "superadmin@example.com",
-    "password": "superpassword"
-  }
-  ```
+Below is the step-by-step workflow representing the role hierarchy: **SUPER_ADMIN → COMPANY → TUTOR → STUDENT**
 
 ---
 
-## 2. Super Admin Panel (Manage Companies/Tenants)
+## Step 1: System Orchestration (Super Admin)
 
-*Requires role: `SUPER_ADMIN`*
+The Super Admin sets up the platform and creates isolated organizations ("Tenants"). 
 
-Super Admins can create isolated tenants, which act as **Companies** or institutions.
+### 1a. Super Admin Login
+*   **URL**: `/api/super-admin/login`
+*   **Method**: `POST`
+*   **Headers**: `Content-Type: application/json`
+*   **Body**:
+    ```json
+    {
+      "email": "sarathyofficial90@gmail.com",
+      "password": "your_secure_password"
+    }
+    ```
+*   **Response**: Returns an access token (`{ "accessToken": "eyJhb..." }`). Use this token in the `Authorization: Bearer` header for the next step.
 
-### Create Company (Tenant)
-* **URL**: `/api/super-admin/tenant`
-* **Method**: `POST`
-* **Body**:
-  ```json
-  {
-    "tenantName": "Innogreen Academy",
-    "adminEmail": "admin@innogreen.com",
-    "adminPassword": "securepassword",
-    "adminName": "Innogreen Admin"
-  }
-  ```
-* **Description**: Creates a new tenant and an associated `ADMIN` user.
-
----
-
-## 3. Admin / Company / Tutor Management
-
-*Requires role: `ADMIN` or `COMPANY` or `TUTOR`*
-
-Admins (Company Owners) can create sub-users (Students) and manage content.
-
-### Create Student
-* **URL**: `/api/admin/users`
-* **Method**: `POST`
-* **Body**:
-  ```json
-  {
-    "name": "John Doe",
-    "email": "john@student.com",
-    "password": "studentpassword"
-  }
-  ```
-* **Description**: Creates a user with the `STUDENT` role automatically mapped to the calling Admin's `adminId` and `tenantId`.
-
-*(Note: To create Tutors, an Admin could use `PUT /api/admin/manage-users/{id}/role` on an existing student with `?role=TUTOR`, if allowed by business logic)*
-
-### Upload Content (To Cloudinary)
-* **URL**: `/api/admin/content/upload`
-* **Method**: `POST`
-* **Headers**: `Content-Type: multipart/form-data`
-* **Form Data Parameters**:
-  * `title` (String): Title of the content.
-  * `description` (String, Optional): Rich description.
-  * `file` (File, Optional): The PDF or Video file.
-  * `videoUrl` (String, Optional): Provide this instead of `file` for external video links (YouTube, Vimeo, etc.).
-* **Description**: Uploads the video or PDF to Cloudinary and saves the metadata. Returns a success message.
+### 1b. Create Company (Tenant) & Auto-Create Company Admin
+*   **URL**: `/api/super-admin/tenant`
+*   **Method**: `POST`
+*   **Headers**: `Authorization: Bearer <super_admin_jwt>`
+*   **Body**:
+    ```json
+    {
+      "name": "Global Tech Academy",
+      "type": "EDTECH_COMPANY",
+      "adminName": "John Global",
+      "adminEmail": "admin@globaltech.com",
+      "adminPassword": "adminPassword123!"
+    }
+    ```
+*   **Action**: This creates a new Tenant database entry AND automatically provisions an `ADMIN` user holding those credentials tied to the tenant.
 
 ---
 
-## 4. Student Content Access
+## Step 2: Company Administrative Setup
 
-*Requires role: `STUDENT`*
+The newly created Company Admin logs in and begins adding staff (Tutors) or direct students.
 
-Students can list and access content (PDF/Video) that belongs to their assigned Admin/Company.
+### 2a. Company Admin Login
+*   **URL**: `/api/auth/login`
+*   **Method**: `POST`
+*   **Body**:
+    ```json
+    {
+      "email": "admin@globaltech.com",
+      "password": "adminPassword123!"
+    }
+    ```
+*   **Response**: Returns `{ "accessToken": "...", "refreshToken": "..." }`. Both `tenantId` and `ADMIN` role are embedded in the token.
 
-### List Available Content
-* **URL**: `/api/student/content`
-* **Method**: `GET`
-* **Query Params**: `page` (default 0), `size` (default 20)
-* **Response**: Returns a paginated list of content metadata (`title`, `description`, `type`, etc.) available to the student.
+### 2b. Company Creates a Tutor
+*   **URL**: `/api/admin/users`
+*   **Method**: `POST`
+*   **Headers**: `Authorization: Bearer <admin_jwt>`
+*   **Body**:
+    ```json
+    {
+      "name": "Prof. Smith",
+      "email": "smith@globaltech.com",
+      "password": "tutorPassword!",
+      "role": "TUTOR"
+    }
+    ```
 
-### Access Cloudinary Video (HLS / External URLs)
-Videos can either be securely streamed via HLS (using Cloudinary conversions) or accessed via secured external URLs.
+---
 
-**Option A: Get Short-lived HLS Streaming Token & Stream File**
-1. **Get Token**:
-   * **URL**: `/api/student/video/token/{contentId}`
-   * **Method**: `GET`
-   * **Headers**: `X-Device-Fingerprint: <device_hash>`
-   * **Response**: Returns a short-lived token string.
-2. **Stream Playlist**:
-   * **URL**: `/api/student/video/{contentId}/playlist?token={generated_token}`
-   * **Method**: `GET`
-   * **Headers**: `X-Device-Fingerprint: <device_hash>`
-   * **Description**: Returns a 302 Redirect to the secure Cloudinary `fileUrl` (which client players can use as an `.m3u8` source).
+## Step 3: Tutor Management (Add Students & Content)
 
-**Option B: Get External Secure Video URL (Mighty Networks style)**
-* **URL**: `/api/student/video/{contentId}/secure-url`
-* **Method**: `GET`
-* **Response**: Returns the external `http...` video URL string directly for `VIDEO_URL` type content.
+The Tutor logs in (`/api/auth/login` with their credentials) and builds out the classroom by adding students and uploading Cloudinary content.
 
-### Access Secured PDF
-PDF files use signed, time-limited URLs to prevent sharing.
+### 3a. Tutor Creates a Student
+*   **URL**: `/api/admin/users`  *(Note: Tutors use the same endpoint, limited by their authority)*
+*   **Method**: `POST`
+*   **Headers**: `Authorization: Bearer <tutor_jwt>`
+*   **Body**:
+    ```json
+    {
+      "name": "Alice Student",
+      "email": "alice@student.com",
+      "password": "studentPassword!",
+      "role": "STUDENT"
+    }
+    ```
 
-**1. Generate Signed URL**
-* **URL**: `/api/student/pdf/url/{contentId}`
-* **Method**: `GET`
-* **Response**: Returns a fully constructed signed URL containing the `token`, `ts`, and `email` query parameters.
+### 3b. Tutor/Company Upload Content (Cloudinary)
+*   **URL**: `/api/admin/content/upload`
+*   **Method**: `POST`
+*   **Headers**: `Authorization: Bearer <tutor_jwt>`, `Content-Type: multipart/form-data`
+*   **Form Data Fields**:
+    *   `title` (String): "Chapter 1: Intro"
+    *   `description` (String): "Course Introduction"
+    *   `file` (File, Optional): Physical PDF or Video upload (sent directly to Cloudinary).
+    *   `videoUrl` (String, Optional): An external link instead of uploading a file.
 
-**2. View/Download Watermarked PDF**
-* **URL**: `(The URL generated from the step above)` 
-  `e.g., /api/student/pdf/{contentId}?token=...&ts=...&email=...`
-* **Method**: `GET`
-* **Description**: Authenticates the token natively, generates dynamic watermarks, and streams the PDF document inline to the client.
+---
+
+## Step 4: Student Access (View Content)
+
+The Student logs in (`/api/auth/login`) and retrieves secure access to the Cloudinary assets.
+
+### 4a. List Content
+*   **URL**: `/api/student/content`
+*   **Method**: `GET`
+*   **Headers**: `Authorization: Bearer <student_jwt>`
+*   **Response**: JSON Array of available video/PDF objects.
+
+### 4b. Access Cloudinary Video (Direct Token Stream)
+1. **Get Short-lived Stream Token:**
+    *   **URL**: `/api/video/stream/{contentId}/token`
+    *   **Method**: `GET`
+    *   **Headers**: `Authorization: Bearer <student_jwt>`
+    *   **Response**: Returns the textual token string.
+
+2. **Access Video (Used in `<video src="...">`):**
+    *   **URL**: `/api/video/stream/{contentId}?streamToken=<the_token_string>`
+    *   **Method**: `GET` *(Authorization Header NOT required physically, validated by token parameter)*
+    *   **Result**: Secure 302 redirect directly to Cloudinary's Video CDN.
+
+### 4c. Access Cloudinary PDF (Signed URL)
+1. **Generate Signed Access URL:**
+    *   **URL**: `/api/student/pdf/url/{contentId}`
+    *   **Method**: `GET`
+    *   **Headers**: `Authorization: Bearer <student_jwt>`
+    *   **Response**: Returns a full URL string (e.g. `http://.../api/student/pdf/123?token=XXX&ts=YYY&email=ZZZ`)
+
+2. **View PDF (Used in `<iframe>` or PDF.js):**
+    *   **URL**: *(The exact string returned from step 1)*
+    *   **Method**: `GET`
+    *   **Result**: Secure 302 redirect to Cloudinary's PDF CDN or internal watermarked render.
