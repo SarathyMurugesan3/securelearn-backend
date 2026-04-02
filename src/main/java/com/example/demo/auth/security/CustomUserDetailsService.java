@@ -1,6 +1,7 @@
 package com.example.demo.auth.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,6 +15,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 	private final UserRepository userRepository;
 
+	@Value("${super.admin.email:superadmin}")
+	private String superAdminEmail;
+
 	@Autowired
 	public CustomUserDetailsService(UserRepository userRepository) {
 		this.userRepository = userRepository;
@@ -22,9 +26,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		// Synthetic user interception for Super Admin (avoids DB hit)
-		if ("superadmin".equals(email)) {
+		if (superAdminEmail.equals(email) || "superadmin".equals(email)) {
 			return org.springframework.security.core.userdetails.User.builder()
-					.username("superadmin")
+					.username(email)
 					.password("") // Password is not evaluated here during JWT parsing
 					.authorities("SUPER_ADMIN")
 					.disabled(false)
@@ -32,13 +36,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 		}
 
 		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
+				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 		String roleName = user.getRole().toUpperCase().trim();
 
 		return org.springframework.security.core.userdetails.User.builder()
 				.username(user.getEmail())
 				.password(user.getPassword())
-				.authorities(roleName) // This sets the authority to "STUDENT"
+				.authorities(roleName) // This sets the authority to "STUDENT", "ADMIN", etc.
 				.disabled(user.isBlocked())
 				.build();
 	}
