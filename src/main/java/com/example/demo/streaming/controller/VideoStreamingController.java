@@ -1,18 +1,8 @@
 package com.example.demo.streaming.controller;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -105,41 +95,16 @@ public class VideoStreamingController {
     }
 
     /**
-     * Secure HLS Segment (.ts files)
-     */
-    @GetMapping("/{id}/segment/{file}")
-    public ResponseEntity<Resource> streamSegment(
-            @PathVariable String id,
-            @PathVariable String file,
-            @RequestParam String token,
-            @RequestHeader("X-Device-Fingerprint") String fingerprint,
-            HttpServletRequest request) throws MalformedURLException {
-
-        String ip = request.getRemoteAddr();
-
-        if (!videoTokenService.validateToken(token, id, fingerprint, ip)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        Content content = contentRepository.findById(id).orElseThrow();
-        Path path = Paths.get(content.getFilePath(), file);
-        Resource resource = new UrlResource(path.toUri());
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("video/mp2t"))
-                .body(resource);
-    }
-
-    /**
      * Secure HLS Playlist
+     * Redirects to the Cloudinary hosted file. Cloudinary can auto-convert to HLS 
+     * by replacing the extension with .m3u8 or the client can do it.
      */
     @GetMapping("/{id}/playlist")
     public ResponseEntity<String> streamPlaylist(
             @PathVariable String id,
             @RequestParam String token,
             @RequestHeader("X-Device-Fingerprint") String fingerprint,
-            HttpServletRequest request)
-            throws IOException {
+            HttpServletRequest request) {
 
         String ip = request.getRemoteAddr();
 
@@ -148,24 +113,15 @@ public class VideoStreamingController {
         }
 
         Content content = contentRepository.findById(id).orElseThrow();
-        Path playlistPath = Paths.get(content.getFilePath(), "playlist.m3u8");
-        List<String> lines = Files.readAllLines(playlistPath);
-        List<String> modified = new ArrayList<>();
-
-        for (String line : lines) {
-            if (line.endsWith(".ts")) {
-                String newLine =
-                        "/api/student/video/" + id +
-                        "/segment/" + line +
-                        "?token=" + token;
-                modified.add(newLine);
-            } else {
-                modified.add(line);
-            }
+        
+        String url = content.getFileUrl();
+        if (url == null || url.isBlank()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
-                .body(String.join("\n", modified));
+        
+        // Return 302 Redirect to Cloudinary URL
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, url)
+                .build();
     }
 }
