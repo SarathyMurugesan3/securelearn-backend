@@ -62,8 +62,8 @@ public class AuthService {
 		String deviceInfo = httpRequest.getHeader("User-Agent");
 		com.example.demo.auth.model.UserSession session = sessionService.createSession(user, ipAddress, deviceInfo);
 
-		// Risk scoring — only for non-ADMIN users; admins are exempt from risk-based blocking
-		if (!"ADMIN".equals(user.getRole())) {
+		// Risk scoring — only for STUDENTS; admins and tutors are exempt from risk-based auto-blocking
+		if ("STUDENT".equals(user.getRole())) {
 			riskEngineService.calculateRisk(user, ipAddress, deviceInfo);
 			// Re-fetch user in case block status was just set by risk engine
 			user = userRepository.findByEmail(user.getEmail()).orElseThrow();

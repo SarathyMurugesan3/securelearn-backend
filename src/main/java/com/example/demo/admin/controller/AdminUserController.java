@@ -10,13 +10,16 @@ import com.example.demo.user.dto.CreateUserRequest;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;
 import com.example.demo.user.service.UserService;
+import com.example.demo.risk.repository.UserRiskRepository;
+// import com.example.demo.risk.model.UserRisk;
 
 import java.util.List;
 
 /**
  * ADMIN panel: Create/manage users under the logged-in admin's tenant.
  * Supports creating TUTOR and STUDENT roles.
- * The adminId is always resolved from JWT — never trusted from the request body.
+ * The adminId is always resolved from JWT — never trusted from the request
+ * body.
  */
 @RestController
 @RequestMapping("/api/admin/users")
@@ -24,11 +27,14 @@ public class AdminUserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final UserRiskRepository userRiskRepository;
 
     @Autowired
-    public AdminUserController(UserService userService, UserRepository userRepository) {
+    public AdminUserController(UserService userService, UserRepository userRepository,
+            UserRiskRepository userRiskRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
+        this.userRiskRepository = userRiskRepository;
     }
 
     /**
@@ -51,7 +57,7 @@ public class AdminUserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Invalid role. Admin can only create TUTOR or STUDENT users.");
         }
-        
+
         // Prevent horizontal privilege escalation: TUTORs cannot create other TUTORs
         if ("TUTOR".equals(admin.getRole()) && requestedRole.equalsIgnoreCase("TUTOR")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -128,6 +134,14 @@ public class AdminUserController {
         user.setBlocked(false);
         user.setRiskScore(0);
         userRepository.save(user);
+
+        // Also clear the risk score in the UserRisk collection, otherwise RiskEngine
+        // will immediately block them again
+        userRiskRepository.findByUserId(id).ifPresent(risk -> {
+            risk.setRiskScore(0);
+            userRiskRepository.save(risk);
+        });
+
         return ResponseEntity.ok("User unblocked");
     }
 
