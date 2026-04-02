@@ -16,21 +16,21 @@ import org.springframework.stereotype.Service;
  * Stamps a dynamic, per-request diagonal watermark on every page of a PDF.
  *
  * Text is composed by the caller (PdfController) from live request data:
- *   line1 = user email
- *   line2 = IP address + UTC timestamp
+ * line1 = user email
+ * line2 = IP address + UTC timestamp
  */
 @Service
 public class PdfWatermarkService {
 
-    private static final float FONT_SIZE    = 18f;
+    private static final float FONT_SIZE = 18f;
     private static final float LINE_SPACING = 24f;
     // Diagonal angle in radians (~30°)
-    private static final double ANGLE_RAD   = Math.toRadians(30);
+    private static final double ANGLE_RAD = Math.toRadians(30);
 
     /**
-     * @param filePath      absolute path to the source PDF
-     * @param line1         first watermark line (email)
-     * @param line2         second watermark line (IP | timestamp)
+     * @param filePath absolute path to the source PDF
+     * @param line1    first watermark line (email)
+     * @param line2    second watermark line (IP | timestamp)
      * @return watermarked PDF bytes, ready to stream to the client
      */
     public byte[] addWatermark(String filePath, String line1, String line2) throws IOException {
@@ -38,14 +38,14 @@ public class PdfWatermarkService {
 
         for (PDPage page : document.getPages()) {
             PDRectangle pageSize = page.getMediaBox();
-            float cx = pageSize.getWidth()  / 2f;
+            float cx = pageSize.getWidth() / 2f;
             float cy = pageSize.getHeight() / 2f;
 
             PDPageContentStream cs = new PDPageContentStream(document, page, AppendMode.APPEND, true, true);
             cs.saveGraphicsState();
 
             // Light grey, semi-transparent feel
-            cs.setNonStrokingColor(180, 180, 180);
+            // cs.setNonStrokingColor(180, 180, 180);
 
             // Apply rotation matrix around page centre
             float cosA = (float) Math.cos(ANGLE_RAD);
@@ -77,7 +77,8 @@ public class PdfWatermarkService {
     }
 
     /**
-     * Convenience overload — single-string watermark (backward-compatible with legacy calls).
+     * Convenience overload — single-string watermark (backward-compatible with
+     * legacy calls).
      */
     public byte[] addWatermark(String filePath, String watermarkText) throws IOException {
         return addWatermark(filePath, watermarkText, "");

@@ -1,19 +1,13 @@
 package com.example.demo.content.controller;
 
-import java.io.File;
-
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+// import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+// import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,31 +26,35 @@ import com.example.demo.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 
-
 /**
  * Secure video streaming endpoint.
  *
  * Flow:
- *   1. Client calls GET /video/stream/{videoId}/token  → receives a short-lived stream token
- *   2. Client calls GET /video/stream/{videoId}?streamToken=<token> → streamed video bytes
+ * 1. Client calls GET /video/stream/{videoId}/token → receives a short-lived
+ * stream token
+ * 2. Client calls GET /video/stream/{videoId}?streamToken=<token> → streamed
+ * video bytes
  *
- * All guards (JWT, tenant, session, risk) are enforced at step 1 (token issuance).
- * Step 2 only validates the lightweight stream token, keeping hot-path latency minimal.
+ * All guards (JWT, tenant, session, risk) are enforced at step 1 (token
+ * issuance).
+ * Step 2 only validates the lightweight stream token, keeping hot-path latency
+ * minimal.
  */
 @RestController
 @RequestMapping("/api/video/stream")
 public class SecureVideoStreamController {
 
     private static final int RISK_BLOCK_THRESHOLD = 100;
-    private static final long MAX_CHUNK_BYTES     = 2 * 1024 * 1024L; // 2 MB per range chunk
+    // private static final long MAX_CHUNK_BYTES = 2 * 1024 * 1024L; // 2 MB per
+    // range chunk
 
-    private final UserRepository       userRepository;
-    private final ContentRepository    contentRepository;
-    private final JwtService           jwtService;
-    private final SessionService       sessionService;
-    private final RiskEngineService    riskEngineService;
-    private final VideoStreamService   videoStreamService;
-    private final ActivityLogService   activityLogService;
+    private final UserRepository userRepository;
+    private final ContentRepository contentRepository;
+    private final JwtService jwtService;
+    private final SessionService sessionService;
+    private final RiskEngineService riskEngineService;
+    private final VideoStreamService videoStreamService;
+    private final ActivityLogService activityLogService;
 
     public SecureVideoStreamController(
             UserRepository userRepository,
@@ -67,11 +65,11 @@ public class SecureVideoStreamController {
             VideoStreamService videoStreamService,
             ActivityLogService activityLogService) {
 
-        this.userRepository     = userRepository;
-        this.contentRepository  = contentRepository;
-        this.jwtService         = jwtService;
-        this.sessionService     = sessionService;
-        this.riskEngineService  = riskEngineService;
+        this.userRepository = userRepository;
+        this.contentRepository = contentRepository;
+        this.jwtService = jwtService;
+        this.sessionService = sessionService;
+        this.riskEngineService = riskEngineService;
         this.videoStreamService = videoStreamService;
         this.activityLogService = activityLogService;
     }
@@ -80,9 +78,11 @@ public class SecureVideoStreamController {
 
     /**
      * Called by the frontend before starting playback.
-     * Requires valid Authorization: Bearer <accessToken> header (enforced by JwtAuthenticationFilter).
+     * Requires valid Authorization: Bearer <accessToken> header (enforced by
+     * JwtAuthenticationFilter).
      *
-     * Validates: JWT → session active → tenant match → risk score → content ownership
+     * Validates: JWT → session active → tenant match → risk score → content
+     * ownership
      * Returns: a 7-minute stream token scoped to this exact video + tenant.
      */
     @GetMapping("/{videoId}/token")
@@ -96,7 +96,8 @@ public class SecureVideoStreamController {
         // Extract raw Bearer token from Authorization header
         String authHeader = httpRequest.getHeader("Authorization");
         String accessToken = (authHeader != null && authHeader.startsWith("Bearer "))
-                ? authHeader.substring(7) : null;
+                ? authHeader.substring(7)
+                : null;
         if (accessToken == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing Authorization header.");
         }
@@ -147,21 +148,19 @@ public class SecureVideoStreamController {
     // ── Step 2: Stream video bytes ─────────────────────────────────────────────
 
     /**
-     * Does NOT require the Authorization header — the stream token is self-contained.
+     * Does NOT require the Authorization header — the stream token is
+     * self-contained.
      * Validates: stream token signature + expiry + videoId + tenantId.
      * Supports HTTP Range requests for seeking/buffering.
      */
     @GetMapping("/{videoId}")
     public ResponseEntity<?> streamVideo(
             @PathVariable String videoId,
-            @RequestParam String streamToken,
-            @RequestHeader HttpHeaders headers) throws Exception {
+            @RequestParam String streamToken) throws Exception {
 
         // 1. Parse + validate the stream token
-        //    We need the tenantId embedded in the token itself, so we validate after decoding.
         Claims claims;
         try {
-            // For tenant validation we use the claim inside the token (no DB hit needed)
             String embeddedTenantId = extractTenantIdFromToken(streamToken);
             claims = videoStreamService.validateStreamToken(streamToken, videoId, embeddedTenantId);
         } catch (IllegalArgumentException e) {
@@ -176,53 +175,21 @@ public class SecureVideoStreamController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Video not found.");
         }
 
-        // 3. Ensure the physical file exists
-        File videoFile = new File(content.getFilePath());
-        if (!videoFile.exists()) {
+        // 3. Ensure Cloudinary file URL is present
+        String cloudinaryUrl = content.getFileUrl();
+        if (cloudinaryUrl == null || cloudinaryUrl.isBlank()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Video file is temporarily unavailable. Please contact support.");
+                    .body("Video file is not available. Please contact support.");
         }
 
         // 4. Log stream start (async — zero latency impact)
-        userRepository.findByEmail(email).ifPresent(u ->
-            activityLogService.logAction(u.getId(), u.getTenantId(), "PLAY_VIDEO", null)
-        );
+        userRepository.findByEmail(email)
+                .ifPresent(u -> activityLogService.logAction(u.getId(), u.getTenantId(), "PLAY_VIDEO", null));
 
-        // 5. Build response — support both full and range requests
-        Resource videoResource = new FileSystemResource(videoFile);
-        MediaType mediaType    = MediaType.parseMediaType("video/mp4");
-
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.setContentType(mediaType);
-        responseHeaders.set("Accept-Ranges", "bytes");
-        // Security headers: prevent embedding or caching of secure content
-        responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate");
-        responseHeaders.set("X-Content-Type-Options", "nosniff");
-
-        // Full file (e.g. Postman or direct link)
-        if (headers.getRange().isEmpty()) {
-            responseHeaders.setContentLength(videoResource.contentLength());
-            return ResponseEntity.ok()
-                    .headers(responseHeaders)
-                    .body(videoResource);
-        }
-
-        // Range request (browser seeking / adaptive buffering)
-        HttpRange range      = headers.getRange().get(0);
-        long contentLength   = videoResource.contentLength();
-        long start           = range.getRangeStart(contentLength);
-        long end             = range.getRangeEnd(contentLength);
-        long rangeLength     = Math.min(MAX_CHUNK_BYTES, end - start + 1);
-
-        ResourceRegion region = new ResourceRegion(videoResource, start, rangeLength);
-
-        responseHeaders.set(HttpHeaders.CONTENT_RANGE,
-                "bytes " + start + "-" + (start + rangeLength - 1) + "/" + contentLength);
-        responseHeaders.setContentLength(rangeLength);
-
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                .headers(responseHeaders)
-                .body(region);
+        // 5. Redirect to the CDN
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, cloudinaryUrl)
+                .build();
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
@@ -230,18 +197,20 @@ public class SecureVideoStreamController {
     /**
      * Quick extract of tenantId from the stream token WITHOUT full validation —
      * used only so we can call validateStreamToken with the expected tenant.
-     * The validateStreamToken call itself re-parses and fully verifies the signature.
+     * The validateStreamToken call itself re-parses and fully verifies the
+     * signature.
      */
     private String extractTenantIdFromToken(String token) {
         try {
             // Split JWT and decode claims without verification just to read the tenant.
             // Full verification happens inside validateStreamToken.
-            String payload  = token.split("\\.")[1];
-            byte[] decoded  = java.util.Base64.getUrlDecoder().decode(payload);
-            String json     = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+            String payload = token.split("\\.")[1];
+            byte[] decoded = java.util.Base64.getUrlDecoder().decode(payload);
+            String json = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
             // Simple string extraction (avoids pulling in Jackson here)
             int start = json.indexOf("\"tid\":\"") + 7;
-            if (start < 7) return null;
+            if (start < 7)
+                return null;
             int end = json.indexOf("\"", start);
             return end > start ? json.substring(start, end) : null;
         } catch (Exception e) {

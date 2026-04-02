@@ -91,12 +91,13 @@ public class SecurityConfig {
 						.requestMatchers("/api/auth/admin/**").hasAuthority("ADMIN")
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+						.requestMatchers("/api/tutor/**").hasAnyAuthority("TUTOR", "ADMIN")
 						.requestMatchers("/api/student/video/**").permitAll()
 						.requestMatchers("/api/student/pdf/{id}").permitAll()
 						.requestMatchers("/api/video/stream/{id}").permitAll() // stream token self-validates
 						.requestMatchers("/api/watermark").authenticated() // requires valid JWT
 						.requestMatchers("/error").permitAll()
-						.requestMatchers("/api/student/**").hasAnyAuthority("STUDENT", "ADMIN")
+						.requestMatchers("/api/student/**").hasAnyAuthority("STUDENT", "ADMIN", "TUTOR")
 						.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/api/monitor/**").authenticated()
 						.anyRequest().authenticated())

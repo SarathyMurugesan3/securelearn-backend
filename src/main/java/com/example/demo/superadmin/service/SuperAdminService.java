@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.auth.security.JwtService;
@@ -23,31 +24,31 @@ public class SuperAdminService {
     private final JwtService jwtService;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public SuperAdminService(
             @Value("${super.admin.email}") String superAdminEmail,
             @Value("${super.admin.password}") String superAdminPassword,
             JwtService jwtService,
             TenantRepository tenantRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.superAdminEmail = superAdminEmail;
         this.superAdminPassword = superAdminPassword;
         this.jwtService = jwtService;
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
-     * Authenticate super admin utilizing explicitly hardcoded/env credentials.
-     * Returns a valid JWT with the "SUPER_ADMIN" role on success.
+     * Authenticate super admin using env credentials.
+     * Returns a JWT with "SUPER_ADMIN" role.
      */
     public String authenticate(String email, String password) {
         if (!superAdminEmail.equals(email) || !superAdminPassword.equals(password)) {
             throw new SecurityException("Invalid super admin credentials");
         }
-        
-        // Generate Token: (email, role, tenantId, sessionId)
-        // Set tenantId to null and sessionId to null. The JwtAuthenticationFilter will bypass sessionId checks for this role.
         return jwtService.generateAccessToken(email, "SUPER_ADMIN", null, null);
     }
 
@@ -55,6 +56,9 @@ public class SuperAdminService {
         return tenantRepository.findAll();
     }
 
+    /**
+     * Create tenant AND auto-create an ADMIN user for that company.
+     */
     public Tenant createTenant(CreateTenantRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new IllegalArgumentException("Tenant name cannot be empty.");
@@ -62,9 +66,37 @@ public class SuperAdminService {
         if (request.getType() == null || request.getType().isBlank()) {
             throw new IllegalArgumentException("Tenant type cannot be empty.");
         }
-        
+        if (request.getAdminEmail() == null || request.getAdminEmail().isBlank()) {
+            throw new IllegalArgumentException("Admin email is required.");
+        }
+        if (request.getAdminPassword() == null || request.getAdminPassword().isBlank()) {
+            throw new IllegalArgumentException("Admin password is required.");
+        }
+        if (userRepository.findByEmail(request.getAdminEmail()).isPresent()) {
+            throw new IllegalArgumentException("A user with that admin email already exists.");
+        }
+
+        // 1. Save the tenant
         Tenant tenant = new Tenant(request.getName(), request.getType());
-        return tenantRepository.save(tenant);
+        tenant = tenantRepository.save(tenant);
+
+        // 2. Auto-create ADMIN user linked to this tenant
+        String encodedPassword = passwordEncoder.encode(request.getAdminPassword());
+        String adminName = (request.getAdminName() != null && !request.getAdminName().isBlank())
+                ? request.getAdminName()
+                : request.getName() + " Admin";
+
+        User adminUser = new User(
+                adminName,
+                request.getAdminEmail(),
+                encodedPassword,
+                "ADMIN",
+                tenant.getId(),
+                null // adminId is null for top-level ADMIN users
+        );
+        userRepository.save(adminUser);
+
+        return tenant;
     }
 
     public Tenant setTenantBlockStatus(String tenantId, boolean blocked) {
@@ -78,12 +110,23 @@ public class SuperAdminService {
         if (!tenantRepository.existsById(tenantId)) {
             throw new IllegalArgumentException("Tenant not found.");
         }
+        // Delete all users belonging to this tenant
+        userRepository.deleteAll(userRepository.findAll().stream()
+                .filter(u -> tenantId.equals(u.getTenantId()))
+                .toList());
         tenantRepository.deleteById(tenantId);
-        
-        // Caution: In production, consider soft-deleting and cascading soft-deletes to Users/Exams.
     }
 
     public Page<User> getAllUsersAcrossTenants(Pageable pageable) {
         return userRepository.findAll(pageable);
+    }
+
+    /**
+     * Returns all ADMIN users for a specific tenant (company admins).
+     */
+    public List<User> getAdminsForTenant(String tenantId) {
+        return userRepository.findAll().stream()
+                .filter(u -> tenantId.equals(u.getTenantId()) && "ADMIN".equals(u.getRole()))
+                .toList();
     }
 }
