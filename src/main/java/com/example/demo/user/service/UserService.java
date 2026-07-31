@@ -28,7 +28,6 @@ public class UserService {
 				&& !request.getRole().equalsIgnoreCase("COMPANY") && !request.getRole().equalsIgnoreCase("TUTOR")) {
 			throw new RuntimeException("Invalid role. Must be ADMIN, COMPANY, TUTOR, or STUDENT.");
 		}
-		}
 		String encodedPassword = passwordEncoder.encode(request.getPassword());
 		User user = new User(request.getName(),request.getEmail(),encodedPassword,request.getRole(), request.getTenantId(), request.getAdminId());
 		return userRepository.save(user);

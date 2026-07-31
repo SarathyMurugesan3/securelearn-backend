@@ -55,8 +55,8 @@ securelearn:
 
 super:
   admin:
-    email: ${SUPER_ADMIN_EMAIL}
-    password: ${SUPER_ADMIN_PASSWORD}
+    email: ${SUPER_ADMIN_EMAIL:admin@securelearn.com}
+    password: ${SUPER_ADMIN_PASSWORD:admin123}
 logging:
   level:
     root: INFO
