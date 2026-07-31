@@ -24,9 +24,10 @@ public class UserService {
 		if(userRepository.findByEmail(request.getEmail()).isPresent()) {
 			throw new RuntimeException("Email already registered");
 		}
-		if(!request.getRole().equals("ADMIN") && !request.getRole().equals("STUDENT")
-				&& !request.getRole().equals("COMPANY") && !request.getRole().equals("TUTOR")) {
+		if (!request.getRole().equalsIgnoreCase("ADMIN") && !request.getRole().equalsIgnoreCase("STUDENT")
+				&& !request.getRole().equalsIgnoreCase("COMPANY") && !request.getRole().equalsIgnoreCase("TUTOR")) {
 			throw new RuntimeException("Invalid role. Must be ADMIN, COMPANY, TUTOR, or STUDENT.");
+		}
 		}
 		String encodedPassword = passwordEncoder.encode(request.getPassword());
 		User user = new User(request.getName(),request.getEmail(),encodedPassword,request.getRole(), request.getTenantId(), request.getAdminId());

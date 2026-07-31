@@ -47,11 +47,11 @@ public class AuthController {
 					.body("Public registration disabled");
 		}
 
-		// Validate role — only STUDENT or ADMIN accepted
+		// Validate role — STUDENT, TUTOR, or ADMIN accepted
 		String role = request.getRole();
-		if (role == null || (!role.equalsIgnoreCase("STUDENT") && !role.equalsIgnoreCase("ADMIN"))) {
+		if (role == null || (!role.equalsIgnoreCase("STUDENT") && !role.equalsIgnoreCase("TUTOR") && !role.equalsIgnoreCase("ADMIN"))) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body("Invalid role. Must be STUDENT or ADMIN.");
+					.body("Invalid role. Must be STUDENT, TUTOR, or ADMIN.");
 		}
 
 		// ADMIN registration requires adminId
