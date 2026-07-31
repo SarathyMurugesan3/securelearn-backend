@@ -29,19 +29,23 @@ public class DataInitializer implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
 		try {
-			if (userRepository.findByEmail(adminEmail).isEmpty()) {
-				User admin = new User("Super Admin", adminEmail, passwordEncoder.encode(adminPassword), "ADMIN", null, null);
+			String primaryEmail = "sarathyofficial90@gmail.com";
+			String primaryPassword = "Sarathy@2006";
+
+			User admin = userRepository.findByEmail(primaryEmail).orElse(null);
+			if (admin == null) {
+				admin = new User("Super Admin", primaryEmail, passwordEncoder.encode(primaryPassword), "ADMIN", null, null);
 				userRepository.save(admin);
-				System.out.println("✅ Super Admin Created: " + adminEmail);
+				System.out.println("✅ Super Admin Created: " + primaryEmail);
 			} else {
-				User admin = userRepository.findByEmail(adminEmail).get();
-				admin.setPassword(passwordEncoder.encode(adminPassword));
+				admin.setPassword(passwordEncoder.encode(primaryPassword));
 				admin.setBlocked(false);
+				admin.setRiskScore(0);
 				userRepository.save(admin);
-				System.out.println("✅ Super Admin synced & password updated: " + adminEmail);
+				System.out.println("✅ Super Admin password force synced to Sarathy@2006 for: " + primaryEmail);
 			}
 
-			// Ensure legacy default admin exists for backwards compatibility
+			// Also ensure admin@securelearn.com / admin123 exists
 			if (userRepository.findByEmail("admin@securelearn.com").isEmpty()) {
 				User defaultAdmin = new User("Default Admin", "admin@securelearn.com", passwordEncoder.encode("admin123"), "ADMIN", null, null);
 				userRepository.save(defaultAdmin);
