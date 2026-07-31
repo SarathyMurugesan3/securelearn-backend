@@ -14,10 +14,10 @@ public class DataInitializer implements CommandLineRunner {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 
-	@Value("${super.admin.email:admin@securelearn.com}")
+	@Value("${super.admin.email:sarathyofficial90@gmail.com}")
 	private String adminEmail;
 
-	@Value("${super.admin.password:admin123}")
+	@Value("${super.admin.password:Sarathy@2006}")
 	private String adminPassword;
 	
 	@Autowired
