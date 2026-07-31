@@ -34,7 +34,17 @@ public class DataInitializer implements CommandLineRunner {
 				userRepository.save(admin);
 				System.out.println("✅ Super Admin Created: " + adminEmail);
 			} else {
-				System.out.println("✅ Super Admin already exists: " + adminEmail);
+				User admin = userRepository.findByEmail(adminEmail).get();
+				admin.setPassword(passwordEncoder.encode(adminPassword));
+				admin.setBlocked(false);
+				userRepository.save(admin);
+				System.out.println("✅ Super Admin synced & password updated: " + adminEmail);
+			}
+
+			// Ensure legacy default admin exists for backwards compatibility
+			if (userRepository.findByEmail("admin@securelearn.com").isEmpty()) {
+				User defaultAdmin = new User("Default Admin", "admin@securelearn.com", passwordEncoder.encode("admin123"), "ADMIN", null, null);
+				userRepository.save(defaultAdmin);
 			}
 		} catch (Exception e) {
 			System.out.println("⚠️ DataInitializer skipped — MongoDB not yet available: " + e.getMessage());
