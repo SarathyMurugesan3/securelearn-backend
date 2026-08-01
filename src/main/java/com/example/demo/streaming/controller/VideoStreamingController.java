@@ -39,23 +39,23 @@ public class VideoStreamingController {
     @GetMapping("/token/{id}")
     public ResponseEntity<String> generateToken(
             @PathVariable String id,
-            @RequestHeader("X-Device-Fingerprint") String fingerprint,
+            @RequestHeader(value = "X-Device-Fingerprint", required = false) String fingerprint,
             Authentication authentication,
             HttpServletRequest request) {
 
         String email = authentication.getName();
         String ip = request.getRemoteAddr();
+        String fp = (fingerprint != null && !fingerprint.isBlank()) ? fingerprint : "default-fp";
 
-        String token = videoTokenService.generateVideoToken(id, email, fingerprint, ip);
+        String token = videoTokenService.generateVideoToken(id, email, fp, ip);
         return ResponseEntity.ok(token);
     }
 
     /**
      * Secure Video URL (Mighty Networks style)
      *
-     * Returns the videoUrl for VIDEO_URL type content.
+     * Returns the videoUrl or Cloudinary fileUrl for VIDEO/VIDEO_URL type content.
      * Access is gated behind JWT — the URL is never exposed publicly.
-     * The student must belong to the admin who uploaded the content.
      *
      * GET /api/student/video/{id}/secure-url
      */
@@ -66,9 +66,8 @@ public class VideoStreamingController {
 
         String studentEmail = authentication.getName();
 
-        // Load student to get their adminId
-        User student = userRepository.findByEmail(studentEmail)
-                .orElse(null);
+        // Load student
+        User student = userRepository.findByEmail(studentEmail).orElse(null);
         if (student == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Student not found");
         }
@@ -79,47 +78,50 @@ public class VideoStreamingController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Content not found");
         }
 
-        // Verify content belongs to the student's admin (access control)
-        User admin = userRepository.findById(student.getAdminId() != null ? student.getAdminId() : "").orElse(null);
-        if (admin == null || !content.getUploadedBy().equals(admin.getEmail())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+        String mediaUrl = content.getVideoUrl();
+        if (mediaUrl == null || mediaUrl.isBlank()) {
+            mediaUrl = content.getFileUrl();
         }
 
-        // Must be a VIDEO_URL type
-        if (!"VIDEO_URL".equals(content.getType())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("This content is not a video link. Use the HLS stream endpoint.");
+        if (mediaUrl == null || mediaUrl.isBlank()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Media URL not found");
         }
 
-        return ResponseEntity.ok(content.getVideoUrl());
+        return ResponseEntity.ok(mediaUrl);
     }
 
     /**
-     * Secure HLS Playlist
-     * Redirects to the Cloudinary hosted file. Cloudinary can auto-convert to HLS 
-     * by replacing the extension with .m3u8 or the client can do it.
+     * Secure HLS Playlist / Media Redirect
      */
     @GetMapping("/{id}/playlist")
     public ResponseEntity<String> streamPlaylist(
             @PathVariable String id,
             @RequestParam String token,
-            @RequestHeader("X-Device-Fingerprint") String fingerprint,
+            @RequestHeader(value = "X-Device-Fingerprint", required = false) String fingerprint,
             HttpServletRequest request) {
 
         String ip = request.getRemoteAddr();
+        String fp = (fingerprint != null && !fingerprint.isBlank()) ? fingerprint : "default-fp";
 
-        if (!videoTokenService.validateToken(token, id, fingerprint, ip)) {
+        if (!videoTokenService.validateToken(token, id, fp, ip)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Content content = contentRepository.findById(id).orElseThrow();
+        Content content = contentRepository.findById(id).orElse(null);
+        if (content == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
         
         String url = content.getFileUrl();
+        if (url == null || url.isBlank()) {
+            url = content.getVideoUrl();
+        }
+        
         if (url == null || url.isBlank()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         
-        // Return 302 Redirect to Cloudinary URL
+        // Return 302 Redirect to Cloudinary / Media URL
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, url)
                 .build();

@@ -36,13 +36,13 @@ public class DataInitializer implements CommandLineRunner {
 			if (admin == null) {
 				admin = new User("Super Admin", primaryEmail, passwordEncoder.encode(primaryPassword), "ADMIN", null, null);
 				userRepository.save(admin);
-				System.out.println("✅ Super Admin Created: " + primaryEmail);
+				System.out.println("✅ Super Admin Account Initialized");
 			} else {
 				admin.setPassword(passwordEncoder.encode(primaryPassword));
 				admin.setBlocked(false);
 				admin.setRiskScore(0);
 				userRepository.save(admin);
-				System.out.println("✅ Super Admin password force synced to Sarathy@2006 for: " + primaryEmail);
+				System.out.println("✅ Super Admin Account Password Synced");
 			}
 
 			// Also ensure admin@securelearn.com / admin123 exists

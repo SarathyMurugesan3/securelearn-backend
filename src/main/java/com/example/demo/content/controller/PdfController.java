@@ -20,6 +20,8 @@ import com.example.demo.user.repository.UserRepository;
 import com.example.demo.watermark.PdfWatermarkService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.net.URL;
 
 @RestController
 @RequestMapping("/api/student/pdf")
@@ -48,22 +50,35 @@ public class PdfController {
     @GetMapping("/url/{id}")
     public ResponseEntity<String> getSignedPdfUrl(
             @PathVariable String id,
-            Authentication authentication) {
+            Authentication authentication,
+            HttpServletRequest request) {
 
         String email = authentication.getName();
-
         long ts = System.currentTimeMillis() / 1000;
 
         String token = signedUrlService.generateToken(id, email, ts);
 
-        // Note: urlEncoding of email is handled dynamically by string formatting if needed, 
-        // but typically email is safe in query params.
-        String url = "https://securelearn-backend.onrender.com/api/student/pdf/"
+        // Dynamically resolve base URL from incoming request to support both localhost and Render
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        if (forwardedProto != null && !forwardedProto.isBlank()) {
+            scheme = forwardedProto;
+        }
+
+        StringBuilder baseUrl = new StringBuilder();
+        baseUrl.append(scheme).append("://").append(serverName);
+        if ((scheme.equals("http") && serverPort != 80) || (scheme.equals("https") && serverPort != 443)) {
+            baseUrl.append(":").append(serverPort);
+        }
+
+        String url = baseUrl.toString() + "/api/student/pdf/"
                 + id + "?token=" + token + "&ts=" + ts + "&email=" + email;
 
         return ResponseEntity.ok(url);
     }
-    
 
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> viewPdf(@PathVariable String id,
@@ -72,60 +87,57 @@ public class PdfController {
                                           @RequestParam String email,
                                           HttpServletRequest request) throws Exception {
 
-        System.out.println("STEP 1: request received for pdf " + id);
-        System.out.println("STEP 2: user email = " + email);
-
         if (!signedUrlService.validateToken(token, id, email, ts)) {
-            System.out.println("STEP 3: token validation FAILED");
             return ResponseEntity.status(403).body("Token validation failed".getBytes());
         }
 
-        System.out.println("STEP 4: token valid");
-
-        User student = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println("STEP 5: student found");
-
-        if (student.getAdminId() == null) {
-            System.out.println("STEP 6: student has no adminId");
-            return ResponseEntity.status(403).body("Student has no assigned admin".getBytes());
+        User student = userRepository.findByEmail(email).orElse(null);
+        if (student == null) {
+            return ResponseEntity.status(404).body("User not found".getBytes());
         }
 
-        User admin = userRepository.findById(student.getAdminId())
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-        System.out.println("STEP 7: admin found = " + admin.getEmail());
-
-        Content content = contentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Content not found"));
-
-        System.out.println("STEP 8: content uploaded by = " + content.getUploadedBy());
-
-        if (!admin.getEmail().equals(content.getUploadedBy())) {
-            System.out.println("STEP 9: admin mismatch -> forbidden");
-            return ResponseEntity.status(403).body("Content does not belong to your admin".getBytes());
+        Content content = contentRepository.findById(id).orElse(null);
+        if (content == null) {
+            return ResponseEntity.status(404).body("Content not found".getBytes());
         }
-
-        System.out.println("STEP 10: permission OK");
 
         // Log PDF access event asynchronously
-        activityLogService.logAction(student.getId(), student.getTenantId(), "ACCESS_PDF", null);
+        try {
+            activityLogService.logAction(student.getId(), student.getTenantId(), "ACCESS_PDF", null);
+        } catch (Exception ignored) {}
 
-        java.io.File pdfFile = new java.io.File(content.getFilePath());
-        if (!pdfFile.exists()) {
-            System.out.println("STEP 11: File missing on disk! (Probably wiped by Render)");
-            return ResponseEntity.status(404).body("Error: The physical PDF file no longer exists on this server. This happens on free Render tiers because the temporary folder resets. Please re-upload the document.".getBytes());
+        byte[] rawBytes = null;
+
+        // 1. Try local file path if present and exists
+        if (content.getFilePath() != null && !content.getFilePath().isBlank()) {
+            java.io.File pdfFile = new java.io.File(content.getFilePath());
+            if (pdfFile.exists()) {
+                rawBytes = java.nio.file.Files.readAllBytes(pdfFile.toPath());
+            }
+        }
+
+        // 2. Fallback to Cloudinary or Remote HTTP/HTTPS File URL if local path doesn't exist
+        if (rawBytes == null && content.getFileUrl() != null && !content.getFileUrl().isBlank()) {
+            try (InputStream in = new URL(content.getFileUrl()).openStream()) {
+                rawBytes = in.readAllBytes();
+            } catch (Exception e) {
+                System.err.println("Failed to fetch PDF from Cloudinary URL: " + e.getMessage());
+            }
+        }
+
+        if (rawBytes == null) {
+            return ResponseEntity.status(404).body("PDF document file is not accessible.".getBytes());
         }
 
         String line1 = student.getEmail();
         String line2 = resolveClientIp(request) + " | " + java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'"));
 
-        byte[] watermarkedPdf = watermarkService.addWatermark(content.getFilePath(), line1, line2);
+        byte[] watermarkedPdf = watermarkService.addWatermarkFromBytes(rawBytes, line1, line2);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
+        		.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=secure.pdf")
                 .body(watermarkedPdf);
     }

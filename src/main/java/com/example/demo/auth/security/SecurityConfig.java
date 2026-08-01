@@ -96,7 +96,9 @@ public class SecurityConfig {
 						.requestMatchers("/api/admin/content/**").hasAnyAuthority("ADMIN", "TUTOR", "SUPER_ADMIN")
 						.requestMatchers("/api/admin/manage-content/**").hasAnyAuthority("ADMIN", "TUTOR", "SUPER_ADMIN")
 						.requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
-						.requestMatchers("/api/tutor/**").hasAnyAuthority("TUTOR", "ADMIN")
+						.requestMatchers("/api/enrollments/tutors").permitAll()
+						.requestMatchers("/api/enrollments/**").authenticated()
+						.requestMatchers("/api/tutor/**").hasAnyAuthority("TUTOR", "ADMIN", "SUPER_ADMIN")
 						.requestMatchers("/api/student/video/**").permitAll()
 						.requestMatchers("/api/student/pdf/{id}").permitAll()
 						.requestMatchers("/api/video/stream/{id}").permitAll() // stream token self-validates
