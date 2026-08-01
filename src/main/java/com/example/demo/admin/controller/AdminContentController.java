@@ -54,13 +54,13 @@ public class AdminContentController {
 	) throws IOException {
 
 	    String adminEmail = authentication.getName();
-	    User admin = userRepository.findByEmail(adminEmail)
-	            .orElseThrow(() -> new RuntimeException("Admin not found"));
+	    User admin = userRepository.findByEmail(adminEmail).orElse(null);
+	    String tenantId = (admin != null) ? admin.getTenantId() : "default";
 
 	    // Mode 1: Video URL (no file) — Mighty Networks style
 	    if ((file == null || file.isEmpty()) && videoUrl != null && !videoUrl.isBlank()) {
 	        Content content = new Content(title, description, videoUrl, adminEmail);
-	        content.setTenantId(admin.getTenantId());
+	        content.setTenantId(tenantId);
 	        contentRepository.save(content);
 	        return ResponseEntity.status(HttpStatus.CREATED).body("Video link saved successfully");
 	    }
@@ -92,7 +92,7 @@ public class AdminContentController {
 	    content.setUploadedBy(adminEmail);
 	    content.setType(type);
 	    content.setUploadedAt(LocalDateTime.now());
-	    content.setTenantId(admin.getTenantId());
+	    content.setTenantId(tenantId);
 
 	    contentRepository.save(content);
 	    return ResponseEntity.status(HttpStatus.CREATED).body("Uploaded successfully");

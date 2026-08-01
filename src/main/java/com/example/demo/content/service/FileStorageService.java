@@ -20,11 +20,30 @@ public class FileStorageService {
     }
 
     public FileUploadResponse uploadFile(MultipartFile file) throws IOException {
+        String contentType = file.getContentType();
+        String resourceType = "auto";
+        if (contentType != null) {
+            if (contentType.startsWith("video/")) {
+                resourceType = "video";
+            } else if (contentType.equals("application/pdf")) {
+                resourceType = "raw";
+            }
+        }
+
         @SuppressWarnings("rawtypes")
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                "resource_type", "auto"
-        ));
-        
+        Map uploadResult;
+        if (file.getSize() > 5 * 1024 * 1024) {
+            // For files > 5MB, use InputStream chunked streaming to prevent JVM memory blocking
+            uploadResult = cloudinary.uploader().uploadLarge(file.getInputStream(), ObjectUtils.asMap(
+                    "resource_type", resourceType,
+                    "chunk_size", 6 * 1024 * 1024
+            ));
+        } else {
+            uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "resource_type", resourceType
+            ));
+        }
+
         FileUploadResponse response = new FileUploadResponse();
         response.setUrl(uploadResult.get("secure_url").toString());
         response.setPublicId(uploadResult.get("public_id").toString());
