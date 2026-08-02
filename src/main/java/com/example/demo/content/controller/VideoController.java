@@ -21,7 +21,9 @@ import com.example.demo.risk.service.RiskEngineService;
 import com.example.demo.user.model.User;
 import com.example.demo.user.repository.UserRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/student/video")
@@ -50,13 +52,29 @@ public class VideoController {
     @GetMapping("/url/{id}")
     public ResponseEntity<String> getSignedVideoUrl(
             @PathVariable String id,
-            Authentication authentication) {
+            Authentication authentication,
+            HttpServletRequest request) {
 
         String email = authentication.getName();
         long ts = System.currentTimeMillis() / 1000;
         String token = signedUrlService.generateToken(id, email, ts);
 
-        String url = "https://securelearn-backend.onrender.com/api/student/video/"
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        if (forwardedProto != null && !forwardedProto.isBlank()) {
+            scheme = forwardedProto;
+        }
+
+        StringBuilder baseUrl = new StringBuilder();
+        baseUrl.append(scheme).append("://").append(serverName);
+        if ((scheme.equals("http") && serverPort != 80) || (scheme.equals("https") && serverPort != 443)) {
+            baseUrl.append(":").append(serverPort);
+        }
+
+        String url = baseUrl.toString() + "/api/student/video/"
                 + id + "?token=" + token + "&ts=" + ts + "&email=" + email;
 
         return ResponseEntity.ok(url);
@@ -112,13 +130,24 @@ public class VideoController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Content does not belong to your admin");
         }
 
-        File videoFile = new File(content.getFilePath());
-        if (!videoFile.exists()) {
-            System.out.println("STEP 11: File missing on disk! (Probably wiped by Render)");
+        File videoFile = (content.getFilePath() != null && !content.getFilePath().isBlank())
+                ? new File(content.getFilePath())
+                : null;
+
+        if (videoFile == null || !videoFile.exists()) {
+            String remoteUrl = content.getFileUrl() != null && !content.getFileUrl().isBlank()
+                    ? content.getFileUrl()
+                    : content.getVideoUrl();
+            if (remoteUrl != null && !remoteUrl.isBlank()) {
+                System.out.println("STEP 11: Local video file not found. Redirecting to remote video URL: " + remoteUrl);
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .location(URI.create(remoteUrl))
+                        .build();
+            }
+
+            System.out.println("STEP 11: File missing on disk and no remote URL!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: The physical video file no longer exists on this server. " +
-                          "This happens on free Render tiers because the temporary folder resets. " +
-                          "Please re-upload the file.");
+                    .body("Error: The physical video file no longer exists on this server.");
         }
 
         Resource videoResource = new FileSystemResource(videoFile);
