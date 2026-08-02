@@ -125,9 +125,9 @@ public class VideoController {
         Content content = contentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Content not found"));
 
-        if (!admin.getEmail().equals(content.getUploadedBy())) {
-            System.out.println("STEP 9: admin mismatch -> forbidden");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Content does not belong to your admin");
+        if (!student.getTenantId().equals(content.getTenantId())) {
+            System.out.println("STEP 9: tenant mismatch -> forbidden");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Content does not belong to your school");
         }
 
         File videoFile = (content.getFilePath() != null && !content.getFilePath().isBlank())

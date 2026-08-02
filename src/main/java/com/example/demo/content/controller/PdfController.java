@@ -101,6 +101,10 @@ public class PdfController {
             return ResponseEntity.status(404).body("Content not found".getBytes());
         }
 
+        if (!student.getTenantId().equals(content.getTenantId())) {
+            return ResponseEntity.status(403).body("Content does not belong to your school".getBytes());
+        }
+
         // Log PDF access event asynchronously
         try {
             activityLogService.logAction(student.getId(), student.getTenantId(), "ACCESS_PDF", null);
