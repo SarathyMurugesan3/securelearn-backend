@@ -29,7 +29,16 @@ public class User {
 	
 	@Indexed
 	private String adminId;
-	
+
+	private String paymentStatus; // PAID, DUE, UNPAID
+	private String paidUntil;     // ISO date string or timestamp
+
+	public String getPaymentStatus() { return paymentStatus; }
+	public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+	public String getPaidUntil() { return paidUntil; }
+	public void setPaidUntil(String paidUntil) { this.paidUntil = paidUntil; }
+
 	public User() {}
 	public User( String name, String email, String password, String role, String tenantId, String adminId) {
 		super();

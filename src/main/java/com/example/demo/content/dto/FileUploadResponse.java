@@ -11,8 +11,12 @@ public class FileUploadResponse {
         this.publicId = publicId;
     }
 
+    private String filePath;
+
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
     public String getPublicId() { return publicId; }
     public void setPublicId(String publicId) { this.publicId = publicId; }
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) { this.filePath = filePath; }
 }

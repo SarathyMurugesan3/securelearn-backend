@@ -45,6 +45,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
         
+        // Skip filter for other public endpoints
+        if (path.equals("/api/ping") || 
+            path.equals("/api/super-admin/login") ||
+            path.equals("/api/enrollments/tutors") ||
+            path.equals("/error") ||
+            path.equals("/")) {
+            return true;
+        }
+        
         // Skip filter for actuator paths
         return path.startsWith("/actuator/");
     }
@@ -84,7 +93,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String sessionId = jwtService.extractSessionId(jwt);
                     if (sessionId == null || !sessionService.validateSession(sessionId)) {
                         System.out.println("Inactive or missing session for token");
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or invalid");
+                        SecurityContextHolder.clearContext();
+                        // Let the filter chain continue — Spring Security will enforce 401 for protected endpoints
+                        filterChain.doFilter(request, response);
                         return;
                     }
                 }

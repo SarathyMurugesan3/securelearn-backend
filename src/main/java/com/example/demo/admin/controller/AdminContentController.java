@@ -89,6 +89,7 @@ public class AdminContentController {
 	    content.setFileName(file.getOriginalFilename());
 	    content.setFileUrl(uploadResponse.getUrl());
 	    content.setPublicId(uploadResponse.getPublicId());
+	    content.setFilePath(uploadResponse.getFilePath());
 	    content.setUploadedBy(adminEmail);
 	    content.setType(type);
 	    content.setUploadedAt(LocalDateTime.now());
